@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# call create-import <file-list>
+# create the file list e.g.
+#   find `pwd`/raw/ -name "*.tif" | sort > ls-sorted.txt
+
+IFS=$'\n'
+
+mod=100
+
+z=0
+zmod=0
+zmoda=0
+
+file="$z-$(($mod-1))"
+filea="$z-$(($mod/2-1))"
+mkdir "$file"
+mkdir "$filea"
+
+for row in `cat "${1}"`
+do
+	if [ "$zmod" -eq "$mod" ]
+	then
+		zmod=0
+		file="$z-$(($z+$mod-1))"
+		mkdir "$file"
+	fi
+	
+	if [ "$zmoda" -eq "$(($mod/2))" ]
+	then
+		zmoda=$((-$mod/2))
+		filea="$z-$(($z+$mod-1))"
+		mkdir "$filea"
+	fi
+	
+#	echo "$row 0 0 $z 8192 8192 11000 30000 1" >> "${file}/import.txt"
+#	echo "$row 0 0 $z 8192 8192 11000 30000 1" >> "${filea}/import.txt"
+
+	echo "$row 0 0 $z - - 11000 30000 1" >> "${file}/import.txt"
+	echo "$row 0 0 $z - - 11000 30000 1" >> "${filea}/import.txt"
+	
+	zmod=$(($zmod+1))
+	zmoda=$(($zmoda+1))
+	z=$(($z+1))
+done
+
