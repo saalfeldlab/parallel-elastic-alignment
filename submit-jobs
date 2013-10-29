@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for range in `ls | grep ^[0-9][0-9]\*-[0-9][0-9]\*\$ | sort -g`
+do
+	echo "qsub -pe batch 4 `pwd`/jobs/align-$range"
+done
