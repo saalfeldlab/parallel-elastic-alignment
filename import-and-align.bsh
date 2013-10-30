@@ -148,15 +148,15 @@ paramElastic.searchRadius = 6;
 paramElastic.blockRadius = 600;
 paramElastic.resolutionSpringMesh = (int)Math.ceil((double)layerset.get2DBounds().width / 8192.0 * 32.0);
 
-paramElastic.minR = 0.1f;
-paramElastic.maxCurvatureR = 1000.0f;
-paramElastic.rodR = 1.0f;
+paramElastic.minR = 0.9f;
+paramElastic.maxCurvatureR = 10.0f;
+paramElastic.rodR = 0.92f;
 
 paramElastic.useLocalSmoothnessFilter = true;
 paramElastic.localModelIndex = 1;
 paramElastic.localRegionSigma = 1000.0f;
-paramElastic.maxLocalEpsilon = 4.0f;
-paramElastic.maxLocalTrust = 3.0f;
+paramElastic.maxLocalEpsilon = 1.0f;
+paramElastic.maxLocalTrust = 4.0f;
 
 paramElastic.isAligned = true;
 paramElastic.maxNumFailures = 3;
