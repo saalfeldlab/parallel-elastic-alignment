@@ -92,7 +92,7 @@ paramAffine = new RegularizedAffineLayerAlignment.Param();
 
 paramAffine.ppm.sift.initialSigma = 1.6f;
 paramAffine.ppm.sift.steps = 3;
-paramAffine.ppm.sift.minOctaveSize = 800;
+paramAffine.ppm.sift.minOctaveSize = 500;
 paramAffine.ppm.sift.maxOctaveSize = 1024;
 paramAffine.ppm.sift.fdSize = 4;
 paramAffine.ppm.sift.fdBins = 8;
