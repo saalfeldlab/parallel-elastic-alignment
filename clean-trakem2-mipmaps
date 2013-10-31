@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# call clean-trakem2-mipmaps <file-list> <chunk-size>
+# chunk-size - the number of layers in one range, overlap is 50%
+# 
+
+IFS=$'\n'
+
+mod=${2:-100}
+
+z=0
+zmod=0
+zmoda=0
+
+rm -rf 0-$(($mod-1))/trakem2*
+rm -rf 0-$(($mod/2-1))/trakem2*
+
+for row in `cat "${1}"`
+do
+	if [ "$zmod" -eq "$mod" ]
+	then
+		zmod=0
+		rm -rf $z-$(($z+$mod-1))/trakem2*
+	fi
+	if [ "$zmoda" -eq "$(($mod/2))" ]
+	then
+		zmoda=$((-$mod/2))
+		rm -rf $z-$(($z+$mod-1))/trakem2*
+	fi
+	zmod=$(($zmod+1))
+	zmoda=$(($zmoda+1))
+	z=$(($z+1))
+done
+
