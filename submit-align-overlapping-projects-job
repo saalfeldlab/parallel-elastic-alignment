@@ -1,0 +1,3 @@
+#!/bin/bash
+
+qsub -pe batch 4 `pwd`/jobs/align-overlapping-projects

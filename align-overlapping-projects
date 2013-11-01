@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Align a series of overlapping chunks that were independently aligned.
+#
+# Call:
+
+# 	./align-overlaping-projects <projects directory> <first index> <last index> <overlap size
+
+xvfb-run -a ${HOME}/packages/Fiji.app/ImageJ-linux64 -Ddir="${1}" -Dstart=${2} -Dend=${3} -Doverlap=${4}  -- --no-splash align-overlaping-projects.bsh
