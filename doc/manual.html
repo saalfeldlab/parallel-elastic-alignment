@@ -76,6 +76,35 @@
 
 <p>As series chunks overlap by 50%, each image is present in two independent chunks (except the first and last half chunks).  While we expect 'elastic' deformation to be averaged away, the relative orientation of two chunks is completely arbitrary.  Therefore, we align the series of chunks with a rigid transformation.  To that end, corresponding locations are sampeld in the overlapping parts of two chunks, and then, for all chunks, a rigid transformation is estimated such that the sum of all square displacements is minimized.  This cannot be parallelized as relative orientations accumulate.</p>
 
+<p>Create a job:</p>
+
+<pre><code>            ./create-align-overlapping-projects-job ls-sorted.txt 100
+</code></pre>
+
+<p>Submit it:</p>
+
+<pre><code>    ./submit-align-overlapping-projects-job
+</code></pre>
+
+<h2>Export Interpolated Chunks</h2>
+
+<p>We are now ready to export the entire series by interpolating the estimated transformations across chunks.</p>
+
+<ol>
+<li><p>Create export jobs</p>
+
+<pre><code>./create-export-jobs ls-sorted.txt 100
+</code></pre></li>
+<li><p>Submit export jobs</p>
+
+<pre><code>./submit-export-jobs ls-sorted.txt 100
+</code></pre></li>
+<li><p>Visually inspect results from a scaled and cropped export</p>
+
+<pre><code>./
+</code></pre></li>
+</ol>
+
 <h2>Other Stuff</h2>
 
 <p>The script</p>
