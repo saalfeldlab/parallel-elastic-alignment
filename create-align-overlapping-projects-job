@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Align a series of overlapping chunks that were independently aligned.
+#
+# Call:
+#       ./create-align-overlapping-projects-job <file-list> <chunk-size>
+
+mkdir -p jobs
+
+n=`wc -l < ${1}`
+mod=${2:-100}
+
+pwd=`pwd`
+abs="$pwd/$range"
+
+echo "#!/bin/bash" > jobs/align-overlapping-projects
+echo "${HOME}/bin/xvfb-run -a ${HOME}/packages/Fiji.app/fiji-linux64 -Xms10g -Xmx10g -Ddir=${pwd} -Dstart=0 -Dend=$(($n-1)) -Doverlap=$(($mod/2)) -- --no-splash ${pwd}/align-overlapping-projects.bsh" >> jobs/align-overlapping-projects
+chmod a+x jobs/align-overlapping-projects
+
