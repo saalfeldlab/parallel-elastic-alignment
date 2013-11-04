@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Export overlapping chunks that were independently aligned with a
+# transformation that is the linear interpolant of both independently
+# estimated transformations in the overlapping range, weights run from 0-1
+# across the range.
+#
+# Call:
+#       ./submit-export-jobs <file-list> <chunk-size>
+
+n=`wc -l < ${1}`
+mod=${2:-100}
+
+step=$(($mod/2))
+first=0
+last=$(($n-1))
+
+#echo "qsub -pe batch 4 `pwd`/jobs/export-project-range-$first-$(($first+$step-1))"
+#qsub -pe batch 4 `pwd`/jobs/export-project-range-$first-$(($first+$step-1))
+
+#for i in `seq $first $step $(($last-3*$step))` 
+for i in `seq $first $step $(($last-$step))` 
+do
+	range="$i-$(($i+3*$step-1))"
+#	echo "qsub -pe batch 4 `pwd`/jobs/export-project-intersection-$range"
+	qsub -pe batch 4 `pwd`/jobs/export-project-intersection-$range
+done
+

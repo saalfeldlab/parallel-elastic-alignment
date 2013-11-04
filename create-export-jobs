@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Export overlapping chunks that were independently aligned with a
+# transformation that is the linear interpolant of both independently
+# estimated transformations in the overlapping range, weights run from 0-1
+# across the range.
+#
+# Call:
+#       ./create-export-job <file-list> <chunk-size>
+
+n=`wc -l < ${1}`
+mod=${2:-100}
+
+step=$(($mod/2))
+first=0
+last=$(($n-1))
+
+mkdir -p jobs
+mkdir -p export
+
+#for i in `seq $first $step $(($last-3*$step))` 
+for i in `seq $first $step $(($last-$step))` 
+do
+	range="$i-$(($i+3*$step-1))"
+	range1="$i-$(($i+2*$step-1))"
+	range2="$(($i+$step))-$(($i+3*$step-1))"
+	pwd=`pwd`
+	job="jobs/export-project-intersection-$range"
+
+	echo "#!/bin/bash" > $job
+	echo "${HOME}/bin/xvfb-run -a ${HOME}/packages/Fiji.app/fiji-linux64 -Xms10g -Xmx10g -Ddir1=$pwd/$range1 -Ddir2=$pwd/$range2 -Dexport=$pwd/export  -- --no-splash ${pwd}/open-and-export-project-intersection.bsh" >> $job
+	chmod a+x $job
+done
+

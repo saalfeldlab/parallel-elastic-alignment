@@ -1,0 +1,23 @@
+#!/bin/bash
+
+pwd="`pwd`"
+export="$pwd/export"
+#export="$pwd/test"
+
+mkdir -p "$export/scale10"
+#mkdir -p "$export/crop1"
+#mkdir -p "$export/crop2"
+mkdir -p "$export/crop"
+for file in `cd $export; ls | grep -P "\.tif$"`
+do
+	script="$export/export-scale-crop-$file.job"
+	echo "#!/bin/bash" > "$script"
+	echo "convert $export/$file -resize 10% $export/scale10/$file" >> "$script"
+#	echo "convert $export/$file -crop 768x768+2900+2400 $export/crop1/$file" >> "$script"
+#	echo "convert $export/$file -crop 768x768+1550+4500 $export/crop2/$file" >> "$script"
+#	echo "convert $export/$file -crop 768x768+3970+5440 $export/crop/$file" >> "$script"
+	echo "convert $export/$file -crop 768x768+1400+4700 $export/crop/$file" >> "$script"
+	chmod a+x "$script"
+	qsub $script
+done
+cd "$pwd"
