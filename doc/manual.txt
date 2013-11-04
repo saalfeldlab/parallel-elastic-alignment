@@ -1,0 +1,92 @@
+# Documentation
+
+Elastic alignment of long FIB-SEM series.
+
+We split elastic alignment of the entire series into parallel alignment jobs for chunks with fix size (e.g. 100) that are overlapping by 50% (e.g. 0-99, 50-149, 100-199, ...).  The independently aligned chunks are then aligned to each other with a rigid transformation that is calculated from a sample of corresponding locations across the overlapping ranges.  Finally, sections are exported with a transformation that is the linear interpolant of both independently estimated transformations in the overlapping range, weights run from 0-1 across the range.
+
+## Preparation
+
+1.	Create a list of all files to be imported with their absolute paths:
+
+		find /groups/flyem/data/AL-Z0613-14/raw/ -name "*.tif" | sort > ls-sorted.txt
+
+	For testing, extract a subset, e.g.:
+
+		head -n 200 ls-sorted.txt > ls-sorted.0-199.txt		
+
+2.	Identify an appropriate contrast range [*min*, *max*] for the images by manually inspecting them.  In fact, contrast can be estimated automatically, but that requires to open each individual image during import which is significant I/O overhead.  A good contrast range for alignment shows the texture to-be-aligned clearly while not being excessively saturated.  Open the image in *ImageJ*, open the *Adjust Brightness and Contrast* dialog and find appropriate values.  Test the values on other images in the series.
+
+3.	Prepare a series of directories with TrakEM2 import.txt files for 50% overlapping chunks of specified size from the list, e.g.:
+
+		./make-import-overlap ls-sorted.txt 100 16000 31000 1
+
+	The name of the directory is the series range, e.g. '0-49', '0-99', '50-149', '100-199', ... The respective `import.txt` file specifies the *x*, *y*, *z* location of each image (*x*, *y* is 0, *z* is a running integer, its dimensions ('-' to let TrakEM2 figure it out), a preferred contrast range [*min*, *max*] and the image type (0: `uint8` (gray), 1: `uint16` (gray), 2: `float32` (gray), 3: `uint8` (indexed color), 4s: `uint32` (RGB color))
+
+	The script
+		
+		./clean-import-overlap ls-sorted.txt 100
+
+	removes the generated directories recursively.  Use it to clean up and start from scratch.
+
+## Import and Align Chunks
+
+Alignment requires that Fiji is installed in `${HOME}/packages/Fiji.app/`.  Please use the version from `/groups/jain/home/saalfelds/packages/Fiji.app` which is a custom build that has been tested.
+
+1.	Modify the parameters in the script `import-and-align.bsh` to your needs.  Test alignment parameters on a representative chunk.  In an interactive graphical session, open Fiji, create a new TrakEM2 project and import the chunk.  First, test affine alignment parameters (`paramAffine`), although I do not expect much need for adjustment here.  Then align the series with those parameters.  Save the project.  Export a chunk of 5 sections around the worst spot of the affinely aligned series as an RGB stack with green (0, 255, 0) background.  Test blockmatching parameters as described at the [Fiji Wiki](http://fiji.sc/Test_Block_Matching_Parameters).  Then adjust the elastic alignment parameters (`paramElastic`) accordingly.
+
+2.	Create parallel jobs for import and alignment:
+
+		./create-jobs
+
+	The script finds all directories in `./` that match `[digit]+-[digit]+` and creates a a bash-script `./jobs/align-[digit]+-[digit]+` for each.
+
+3.	Submit all jobs:
+
+		./submit-jobs
+
+	The script
+		
+		./clean-trakem2-projects ls-sorted.txt 100
+
+	removes the generated TrakEM2 projects and supporting files.  Use it to keep the `import.txt` files but otherwise start from scratch.
+
+	The script
+		
+		./clean-trakem2-projects ls-sorted.txt 100
+
+	removes the generated TrakEM2 supporting files but keeps the `import.txt` and project files.  Use this to save disk space as the supporting files can be regenerated later from the project files.
+
+
+## Rigidly Align Series of Chunks
+
+As series chunks overlap by 50%, each image is present in two independent chunks (except the first and last half chunks).  While we expect 'elastic' deformation to be averaged away, the relative orientation of two chunks is completely arbitrary.  Therefore, we align the series of chunks with a rigid transformation.  To that end, corresponding locations are sampeld in the overlapping parts of two chunks, and then, for all chunks, a rigid transformation is estimated such that the sum of all square displacements is minimized.  This cannot be parallelized as relative orientations accumulate.
+
+
+## Export Interpolated Chunks
+
+1.	Create export jobs
+
+		./create-export-jobs ls-sorted.txt 100
+
+2.	Submit export jobs
+
+		./submit-export-jobs ls-sorted.txt 100
+
+3.	Visually inspect results from a scaled and cropped export
+
+		./
+
+## Other Stuff
+
+The script
+
+		./backup-projects
+
+creates a backup copy of all `project.xml` files in all directories in `./` that match `[digit]+-[digit]+`.
+
+Conversely, the script
+
+		./restore-projects
+
+copies the backup copy over the `project.xml` file in all directories in `./` that match `[digit]+-[digit]+`.  Use these scripts to test desctructive parts of the pipeline.
+

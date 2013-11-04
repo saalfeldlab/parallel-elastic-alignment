@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Manual</title>
+</head>
+<body>
+
+<h1>Documentation</h1>
+
+<p>Elastic alignment of long FIB-SEM series.</p>
+
+<p>We split elastic alignment of the entire series into parallel alignment jobs for chunks with fix size (e.g. 100) that are overlapping by 50% (e.g. 0-99, 50-149, 100-199, ...).  The independently aligned chunks are then aligned to each other with a rigid transformation that is calculated from a sample of corresponding locations across the overlapping ranges.  Finally, sections are exported with a transformation that is the linear interpolant of both independently estimated transformations in the overlapping range, weights run from 0-1 across the range.</p>
+
+<h2>Preparation</h2>
+
+<ol>
+<li><p>Create a list of all files to be imported with their absolute paths:</p>
+
+<pre><code>find /groups/flyem/data/AL-Z0613-14/raw/ -name "*.tif" | sort &gt; ls-sorted.txt
+</code></pre>
+
+<p>For testing, extract a subset, e.g.:</p>
+
+<pre><code>head -n 200 ls-sorted.txt &gt; ls-sorted.0-199.txt
+</code></pre></li>
+<li><p>Identify an appropriate contrast range [<em>min</em>, <em>max</em>] for the images by manually inspecting them.  In fact, contrast can be estimated automatically, but that requires to open each individual image during import which is significant I/O overhead.  A good contrast range for alignment shows the texture to-be-aligned clearly while not being excessively saturated.  Open the image in <em>ImageJ</em>, open the <em>Adjust Brightness and Contrast</em> dialog and find appropriate values.  Test the values on other images in the series.</p></li>
+<li><p>Prepare a series of directories with TrakEM2 import.txt files for 50% overlapping chunks of specified size from the list, e.g.:</p>
+
+<pre><code>./make-import-overlap ls-sorted.txt 100 16000 31000 1
+</code></pre>
+
+<p>The name of the directory is the series range, e.g. '0-49', '0-99', '50-149', '100-199', ... The respective <code>import.txt</code> file specifies the <em>x</em>, <em>y</em>, <em>z</em> location of each image (<em>x</em>, <em>y</em> is 0, <em>z</em> is a running integer, its dimensions ('-' to let TrakEM2 figure it out), a preferred contrast range [<em>min</em>, <em>max</em>] and the image type (0: <code>uint8</code> (gray), 1: <code>uint16</code> (gray), 2: <code>float32</code> (gray), 3: <code>uint8</code> (indexed color), 4s: <code>uint32</code> (RGB color))</p>
+
+<p>The script</p>
+
+<pre><code>./clean-import-overlap ls-sorted.txt 100
+</code></pre>
+
+<p>removes the generated directories recursively.  Use it to clean up and start from scratch.</p></li>
+</ol>
+
+<h2>Import and Align Chunks</h2>
+
+<p>Alignment requires that Fiji is installed in <code>${HOME}/packages/Fiji.app/</code>.  Please use the version from <code>/groups/jain/home/saalfelds/packages/Fiji.app</code> which is a custom build that has been tested.</p>
+
+<ol>
+<li><p>Modify the parameters in the script <code>import-and-align.bsh</code> to your needs.  Test alignment parameters on a representative chunk.  In an interactive graphical session, open Fiji, create a new TrakEM2 project and import the chunk.  First, test affine alignment parameters (<code>paramAffine</code>), although I do not expect much need for adjustment here.  Then align the series with those parameters.  Save the project.  Export a chunk of 5 sections around the worst spot of the affinely aligned series as an RGB stack with green (0, 255, 0) background.  Test blockmatching parameters as described at the <a href="http://fiji.sc/Test_Block_Matching_Parameters">Fiji Wiki</a>.  Then adjust the elastic alignment parameters (<code>paramElastic</code>) accordingly.</p></li>
+<li><p>Create parallel jobs for import and alignment:</p>
+
+<pre><code>./create-jobs
+</code></pre>
+
+<p>The script finds all directories in <code>./</code> that match <code>[digit]+-[digit]+</code> and creates a a bash-script <code>./jobs/align-[digit]+-[digit]+</code> for each.</p></li>
+<li><p>Submit all jobs:</p>
+
+<pre><code>./submit-jobs
+</code></pre>
+
+<p>The script</p>
+
+<pre><code>./clean-trakem2-projects ls-sorted.txt 100
+</code></pre>
+
+<p>removes the generated TrakEM2 projects and supporting files.  Use it to keep the <code>import.txt</code> files but otherwise start from scratch.</p>
+
+<p>The script</p>
+
+<pre><code>./clean-trakem2-projects ls-sorted.txt 100
+</code></pre>
+
+<p>removes the generated TrakEM2 supporting files but keeps the <code>import.txt</code> and project files.  Use this to save disk space as the supporting files can be regenerated later from the project files.</p></li>
+</ol>
+
+<h2>Rigidly Align Series of Chunks</h2>
+
+<p>As series chunks overlap by 50%, each image is present in two independent chunks (except the first and last half chunks).  While we expect 'elastic' deformation to be averaged away, the relative orientation of two chunks is completely arbitrary.  Therefore, we align the series of chunks with a rigid transformation.  To that end, corresponding locations are sampeld in the overlapping parts of two chunks, and then, for all chunks, a rigid transformation is estimated such that the sum of all square displacements is minimized.  This cannot be parallelized as relative orientations accumulate.</p>
+
+<h2>Other Stuff</h2>
+
+<p>The script</p>
+
+<pre><code>    ./backup-projects
+</code></pre>
+
+<p>creates a backup copy of all <code>project.xml</code> files in all directories in <code>./</code> that match <code>[digit]+-[digit]+</code>.</p>
+
+<p>Conversely, the script</p>
+
+<pre><code>    ./restore-projects
+</code></pre>
+
+<p>copies the backup copy over the <code>project.xml</code> file in all directories in <code>./</code> that match <code>[digit]+-[digit]+</code>.  Use these scripts to test desctructive parts of the pipeline.</p>
+</body>
+</html>
+
