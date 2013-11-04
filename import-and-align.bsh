@@ -144,7 +144,7 @@ catch (e) {
 paramElastic = new ElasticLayerAlignment.Param();
 
 paramElastic.layerScale = 0.25f;
-paramElastic.searchRadius = 6;
+paramElastic.searchRadius = 12;
 paramElastic.blockRadius = 600;
 paramElastic.resolutionSpringMesh = (int)Math.ceil((double)layerset.get2DBounds().width / 8192.0 * 32.0);
 
@@ -153,7 +153,7 @@ paramElastic.maxCurvatureR = 10.0f;
 paramElastic.rodR = 0.92f;
 
 paramElastic.useLocalSmoothnessFilter = true;
-paramElastic.localModelIndex = 1;
+paramElastic.localModelIndex = 3;
 paramElastic.localRegionSigma = 1000.0f;
 paramElastic.maxLocalEpsilon = 1.0f;
 paramElastic.maxLocalTrust = 4.0f;
