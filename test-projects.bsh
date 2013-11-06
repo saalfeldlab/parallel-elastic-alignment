@@ -1,0 +1,45 @@
+/**
+ * Tests a series of projects for presence of all images
+ * Call
+ *
+ * xvfb-run ./ImageJ-linux64 -Ddir=<projects directory> -Dstart=<first index> -Dend=<last index> -Doverlap=<overlap size> -- --no-splash test-projects.bsh
+ * 
+ * @author Stephan Saalfeld <saalfeld@mpi-cbg.de>
+ */
+
+import ini.trakem2.ControlWindow;
+import ini.trakem2.Project;
+import ini.trakem2.display.Layer;
+import ini.trakem2.display.Patch;
+import java.util.ArrayList;
+
+runtime = Runtime.getRuntime();
+System.out.println( runtime.availableProcessors() + " cores available for multi-threading" );
+
+dir = System.getProperty("dir");
+start = Integer.parseInt(System.getProperty("start"));
+end = Integer.parseInt(System.getProperty("end"));
+overlap = Integer.parseInt(System.getProperty("overlap"));
+
+ControlWindow.setGUIEnabled(false);
+
+for (int a = start; a < end - 2 * overlap; a += overlap) {
+	range = a + "-" + (a + 2 * overlap - 1);
+	System.out.println("range: " + range);
+	
+	/* load new project */
+	project = Project.openFSProject(dir + "/" + range + "/project.xml", false);
+	layerset = project.getRootLayerSet();
+	
+	/* scan through layers */
+	for (layer : layerset.getLayers()) {
+		patches = layer.getDisplayables(Patch.class);
+		if (patches.size() < 1)
+			System.out.println("  " + layer.getZ() + " missing");
+	}
+	project.destroy();
+}
+
+/* shutdown */
+runtime.exit(0);
+

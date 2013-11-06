@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Test for missing images in a series of projects.
+#
+# Call:
+#       ./create-test-projects-job <file-list> <chunk-size>
+
+mkdir -p jobs
+
+n=`wc -l < ${1}`
+mod=${2:-100}
+
+pwd=`pwd`
+abs="$pwd/$range"
+
+echo "#!/bin/bash" > jobs/test-projects
+echo "${HOME}/bin/xvfb-run -a ${HOME}/packages/Fiji.app/fiji-linux64 -Xms10g -Xmx10g -Ddir=${pwd} -Dstart=0 -Dend=$(($n-1)) -Doverlap=$(($mod/2)) -- --no-splash ${pwd}/test-projects.bsh" >> jobs/test-projects
+chmod a+x jobs/test-projects
+
