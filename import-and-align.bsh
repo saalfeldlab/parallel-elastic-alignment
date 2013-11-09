@@ -172,6 +172,7 @@ paramElastic.maxStretchSpringMesh = 2000.0f;
 paramElastic.maxIterationsSpringMesh = 5000;
 paramElastic.maxPlateauwidthSpringMesh = 1000;
 paramElastic.dampSpringMesh = 0.9f;
+paramElastic.useLegacyOptimizer = false;
 
 new ElasticLayerAlignment().exec(
 	paramElastic,
