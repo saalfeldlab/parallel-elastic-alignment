@@ -84,7 +84,10 @@ We are now ready to export the entire series by interpolating the estimated tran
 
 3.	Visually inspect results from a scaled and cropped export
 
-		./
+		./scale-and-crop-export
+
+	after you have modified the crop region in the second convert command.  Note that this script will generate and submit a large number of jobs (one per image) in short time which may cause trouble with the cluster setup.
+
 
 ## Other Stuff
 
