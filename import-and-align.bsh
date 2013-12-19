@@ -103,7 +103,7 @@ paramAffine.ppm.maxNumThreadsSift = runtime.availableProcessors();
 paramAffine.maxEpsilon = 50.0f;
 paramAffine.minInlierRatio = 0.0f;
 paramAffine.minNumInliers = 12;
-paramAffine.expectedModelIndex = 0;
+paramAffine.expectedModelIndex = 1;
 paramAffine.multipleHypotheses = true;
 paramAffine.rejectIdentity = false;
 paramAffine.identityTolerance = 0.0f;
@@ -115,7 +115,7 @@ paramAffine.desiredModelIndex = 3;
 paramAffine.regularize = true;
 paramAffine.maxIterationsOptimize = 2000;
 paramAffine.maxPlateauwidthOptimize = 200;
-paramAffine.regularizerIndex = 0;
+paramAffine.regularizerIndex = 1;
 paramAffine.lambda = 0.1f;
 
 paramAffine.visualize = false;
@@ -143,19 +143,19 @@ catch (e) {
 /* elastic alignment */
 paramElastic = new ElasticLayerAlignment.Param();
 
-paramElastic.layerScale = 0.25f;
-paramElastic.searchRadius = 12;
+paramElastic.layerScale = 0.125f;
+paramElastic.searchRadius = 60;
 paramElastic.blockRadius = 600;
 paramElastic.resolutionSpringMesh = (int)Math.ceil((double)layerset.get2DBounds().width / 8192.0 * 32.0);
 
-paramElastic.minR = 0.9f;
+paramElastic.minR = 0.6f;
 paramElastic.maxCurvatureR = 10.0f;
 paramElastic.rodR = 0.92f;
 
 paramElastic.useLocalSmoothnessFilter = true;
 paramElastic.localModelIndex = 3;
 paramElastic.localRegionSigma = 1000.0f;
-paramElastic.maxLocalEpsilon = 1.0f;
+paramElastic.maxLocalEpsilon = 16.0f;
 paramElastic.maxLocalTrust = 4.0f;
 
 paramElastic.isAligned = true;
