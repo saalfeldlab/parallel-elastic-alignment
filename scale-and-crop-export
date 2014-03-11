@@ -16,8 +16,9 @@ do
 #	echo "convert $export/$file -crop 768x768+2900+2400 $export/crop1/$file" >> "$script"
 #	echo "convert $export/$file -crop 768x768+1550+4500 $export/crop2/$file" >> "$script"
 #	echo "convert $export/$file -crop 768x768+3970+5440 $export/crop/$file" >> "$script"
-	echo "convert $export/$file -crop 768x768+1400+4700 $export/crop/$file" >> "$script"
+#	echo "convert $export/$file -crop 768x768+1400+4700 $export/crop/$file" >> "$script"
+	echo "convert $export/$file -crop 2060x5120+3620+2220 $export/crop/$file" >> "$script"
 	chmod a+x "$script"
-	qsub $script
+	qsub -cwd $script
 done
 cd "$pwd"

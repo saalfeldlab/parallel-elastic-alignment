@@ -15,6 +15,10 @@ step=$(($mod/2))
 first=0
 last=$(($n-1))
 
+pwd=`pwd`
+mkdir -p $pwd/jobs/log
+cd $pwd/jobs/log
+
 #echo "qsub -pe batch 4 `pwd`/jobs/export-project-range-$first-$(($first+$step-1))"
 #qsub -pe batch 4 `pwd`/jobs/export-project-range-$first-$(($first+$step-1))
 
@@ -23,6 +27,8 @@ for i in `seq $first $step $(($last-$step))`
 do
 	range="$i-$(($i+3*$step-1))"
 #	echo "qsub -pe batch 4 `pwd`/jobs/export-project-intersection-$range"
-	qsub -pe batch 4 `pwd`/jobs/export-project-intersection-$range
+	# qsub -pe batch 16 -l night=true `pwd`/jobs/export-project-intersection-$range
+	qsub -cwd -pe batch 16 $pwd/jobs/export-project-intersection-$range
 done
 
+cd $pwd
