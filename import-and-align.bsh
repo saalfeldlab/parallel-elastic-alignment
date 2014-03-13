@@ -25,177 +25,181 @@ import java.util.HashSet;
 import mpicbg.trakem2.align.ElasticLayerAlignment;
 import mpicbg.trakem2.align.RegularizedAffineLayerAlignment;
 
-runtime = Runtime.getRuntime();
-System.out.println( runtime.availableProcessors() + " cores available for multi-threading" );
-
-dir = System.getProperty("dir");
-file = System.getProperty("file");
-
-ControlWindow.setGUIEnabled(false);
-project = Project.newFSProject("blank", null, dir, false);
-loader = project.getLoader();
-layerset = project.getRootLayerSet();
-layerset.setSnapshotsMode(1);
-
-/* add a reference layer (pointless gymnastik) */
-layer = new Layer(project, 0, 1, layerset);
-layerset.add(layer);
-layer.recreateBuckets();
-
-/* import images */
-task = loader.importImages(
-		layerset.getLayer(0),	// the first layer
-		file,					// the absolute file path to the text file with absolute image file paths
-		" ",					// the column separator  <path> <x> <y> <section index>
-		1.0,					// section thickness, defaults to 1
-		1.0,					// calibration, defaults to 1
-		false,					// whether to homogenize contrast, avoid
-		1.0f,					// scaling factor, default to 1
-		0);						// border width
-
-/* wait until all images have been imported */
-task.join();
-
-/* wait until all mipmaps are generated */
-futures = new ArrayList();
-for (p : layerset.getDisplayables(Patch.class))
-	futures.add(p.updateMipMaps());
-for (f : futures)
-	f.get();
-
-/* delete reference layer if it was not part of the import range */
-l0 = layerset.getLayer(0);
-if (l0.getDisplayables(Patch.class).size() == 0)
-	layerset.remove(l0);
-
-/* save the project */
 try {
-	project.saveAs(dir + "/project.xml", false);
-}
-catch (e) {
-	e.printStackTrace();
-}
-
-/* prepare alignment */
-layerRange = layerset.getLayers();
-fixedLayers = new HashSet();
-emptyLayers = new HashSet();
-
-filter = new Filter() {
-	public boolean accept(Patch patch) {
-		return patch.isVisible();
-		}
-	};
-
-/* affine alignment */
-paramAffine = new RegularizedAffineLayerAlignment.Param();
-
-paramAffine.ppm.sift.initialSigma = 1.6f;
-paramAffine.ppm.sift.steps = 3;
-paramAffine.ppm.sift.minOctaveSize = 500;
-paramAffine.ppm.sift.maxOctaveSize = 1024;
-paramAffine.ppm.sift.fdSize = 4;
-paramAffine.ppm.sift.fdBins = 8;
-paramAffine.ppm.rod = 0.92f;
-paramAffine.ppm.clearCache = true;
-paramAffine.ppm.maxNumThreadsSift = runtime.availableProcessors();
-
-paramAffine.maxEpsilon = 50.0f;
-paramAffine.minInlierRatio = 0.0f;
-paramAffine.minNumInliers = 12;
-paramAffine.expectedModelIndex = 1;
-paramAffine.multipleHypotheses = true;
-paramAffine.rejectIdentity = false;
-paramAffine.identityTolerance = 0.0f;
-paramAffine.maxNumNeighbors = 10;
-paramAffine.maxNumFailures = 3;
-paramAffine.maxNumThreads = runtime.availableProcessors();
-
-paramAffine.desiredModelIndex = 3;
-paramAffine.regularize = true;
-paramAffine.maxIterationsOptimize = 2000;
-paramAffine.maxPlateauwidthOptimize = 200;
-paramAffine.regularizerIndex = 1;
-paramAffine.lambda = 0.1f;
-
-paramAffine.visualize = false;
+	runtime = Runtime.getRuntime();
+	System.out.println( runtime.availableProcessors() + " cores available for multi-threading" );
 	
-new RegularizedAffineLayerAlignment().exec(
-		paramAffine,
-		layerRange,	
+	dir = System.getProperty("dir");
+	file = System.getProperty("file");
+	
+	ControlWindow.setGUIEnabled(false);
+	project = Project.newFSProject("blank", null, dir, false);
+	loader = project.getLoader();
+	layerset = project.getRootLayerSet();
+	layerset.setSnapshotsMode(1);
+	
+	/* add a reference layer (pointless gymnastik) */
+	layer = new Layer(project, 0, 1, layerset);
+	layerset.add(layer);
+	layer.recreateBuckets();
+	
+	/* import images */
+	task = loader.importImages(
+			layerset.getLayer(0),	// the first layer
+			file,					// the absolute file path to the text file with absolute image file paths
+			" ",					// the column separator  <path> <x> <y> <section index>
+			1.0,					// section thickness, defaults to 1
+			1.0,					// calibration, defaults to 1
+			false,					// whether to homogenize contrast, avoid
+			1.0f,					// scaling factor, default to 1
+			0);						// border width
+	
+	/* wait until all images have been imported */
+	task.join();
+	
+//	/* wait until all mipmaps are generated */
+//	futures = new ArrayList();
+//	for (p : layerset.getDisplayables(Patch.class))
+//		futures.add(p.updateMipMaps());
+//	for (f : futures)
+//		f.get();
+
+	/* delete reference layer if it was not part of the import range */
+	l0 = layerset.getLayer(0);
+	if (l0.getDisplayables(Patch.class).size() == 0)
+		layerset.remove(l0);
+	
+	/* save the project */
+		project.saveAs(dir + "/project.xml", false);
+	
+	/* prepare alignment */
+	layerRange = layerset.getLayers();
+	fixedLayers = new HashSet();
+	emptyLayers = new HashSet();
+	
+	filter = new Filter() {
+		public boolean accept(Patch patch) {
+			return patch.isVisible();
+			}
+		};
+	
+	/* affine alignment */
+	paramAffine = new RegularizedAffineLayerAlignment.Param();
+	
+	paramAffine.ppm.sift.initialSigma = 1.6f;
+	paramAffine.ppm.sift.steps = 3;
+	paramAffine.ppm.sift.minOctaveSize = 200;
+	paramAffine.ppm.sift.maxOctaveSize = 1024;
+	paramAffine.ppm.sift.fdSize = 4;
+	paramAffine.ppm.sift.fdBins = 8;
+	paramAffine.ppm.rod = 0.92f;
+	paramAffine.ppm.clearCache = true;
+	paramAffine.ppm.maxNumThreadsSift = runtime.availableProcessors();
+	
+	paramAffine.maxEpsilon = 50.0f;
+	paramAffine.minInlierRatio = 0.0f;
+	paramAffine.minNumInliers = 12;
+	paramAffine.expectedModelIndex = 0;
+	paramAffine.multipleHypotheses = true;
+	paramAffine.rejectIdentity = false;
+	paramAffine.identityTolerance = 0.0f;
+	paramAffine.maxNumNeighbors = 10;
+	paramAffine.maxNumFailures = 3;
+	paramAffine.maxNumThreads = runtime.availableProcessors();
+	
+	paramAffine.desiredModelIndex = 3;
+	paramAffine.regularize = true;
+	paramAffine.maxIterationsOptimize = 2000;
+	paramAffine.maxPlateauwidthOptimize = 2000;
+	paramAffine.regularizerIndex = 0;
+	paramAffine.visualize = false;
+	
+	paramAffine.lambda = 0.1f;
+	
+	new RegularizedAffineLayerAlignment().exec(
+			paramAffine,
+			layerRange,	
+			fixedLayers,
+			emptyLayers,
+			layerset.get2DBounds(),
+			false,
+			false,
+			filter);
+	
+	paramAffine.lambda = 0.01f;
+	
+	layerset.setMinimumDimensions();
+	
+	new RegularizedAffineLayerAlignment().exec(
+			paramAffine,
+			layerRange,	
+			fixedLayers,
+			emptyLayers,
+			layerset.get2DBounds(),
+			false,
+			false,
+			filter);
+	
+	layerset.setMinimumDimensions();
+		
+	/* save the project */
+	project.saveAs(dir + "/project.xml", true);
+
+	/* elastic alignment */
+	paramElastic = new ElasticLayerAlignment.Param();
+	
+	paramElastic.layerScale = 0.25f;
+	paramElastic.searchRadius = 12;
+	paramElastic.blockRadius = 600;
+	paramElastic.resolutionSpringMesh = (int)Math.ceil((double)layerset.get2DBounds().width / 8192.0 * 32.0);
+	
+	paramElastic.minR = 0.6f;
+	paramElastic.maxCurvatureR = 10.0f;
+	paramElastic.rodR = 0.92f;
+	
+	paramElastic.useLocalSmoothnessFilter = true;
+	paramElastic.localModelIndex = 3;
+	paramElastic.localRegionSigma = 1000.0f;
+	paramElastic.maxLocalEpsilon = 1.0f;
+	paramElastic.maxLocalTrust = 4.0f;
+	
+	paramElastic.isAligned = true;
+	paramElastic.maxNumFailures = 3;
+	paramElastic.maxNumNeighbors = 5;
+	paramElastic.maxNumThreads = 8;
+	
+	paramElastic.desiredModelIndex = 1;
+	paramElastic.maxIterationsOptimize = 1000;
+	paramElastic.maxPlateauwidthOptimize = 200;
+
+	paramElastic.stiffnessSpringMesh = 0.25f;
+	paramElastic.maxStretchSpringMesh = 2000.0f;
+	paramElastic.maxIterationsSpringMesh = 5000;
+	paramElastic.maxPlateauwidthSpringMesh = 1000;
+	paramElastic.dampSpringMesh = 0.9f;
+	paramElastic.useLegacyOptimizer = false;
+
+	new ElasticLayerAlignment().exec(
+		paramElastic,
+		project,
+		layerRange,
 		fixedLayers,
 		emptyLayers,
 		layerset.get2DBounds(),
 		false,
 		false,
 		filter);
-
-layerset.setMinimumDimensions();
+	
+	/* wait until all mipmaps are generated */
+	futures = new ArrayList();
+	for (p : layerset.getDisplayables(Patch.class))
+		futures.add(p.updateMipMaps());
+	for (f : futures)
+		f.get();
 		
-/* save the project */
-try {
-	project.saveAs(dir + "/project.xml", true);
-}
-catch (e) {
-	e.printStackTrace();
-}
-
-/* elastic alignment */
-paramElastic = new ElasticLayerAlignment.Param();
-
-paramElastic.layerScale = 0.125f;
-paramElastic.searchRadius = 60;
-paramElastic.blockRadius = 600;
-paramElastic.resolutionSpringMesh = (int)Math.ceil((double)layerset.get2DBounds().width / 8192.0 * 32.0);
-
-paramElastic.minR = 0.6f;
-paramElastic.maxCurvatureR = 10.0f;
-paramElastic.rodR = 0.92f;
-
-paramElastic.useLocalSmoothnessFilter = true;
-paramElastic.localModelIndex = 3;
-paramElastic.localRegionSigma = 1000.0f;
-paramElastic.maxLocalEpsilon = 16.0f;
-paramElastic.maxLocalTrust = 4.0f;
-
-paramElastic.isAligned = true;
-paramElastic.maxNumFailures = 3;
-paramElastic.maxNumNeighbors = 5;
-paramElastic.maxNumThreads = 8;
-
-paramElastic.desiredModelIndex = 1;
-paramElastic.maxIterationsOptimize = 1000;
-paramElastic.maxPlateauwidthOptimize = 200;
-
-paramElastic.stiffnessSpringMesh = 0.25f;
-paramElastic.maxStretchSpringMesh = 2000.0f;
-paramElastic.maxIterationsSpringMesh = 5000;
-paramElastic.maxPlateauwidthSpringMesh = 1000;
-paramElastic.dampSpringMesh = 0.9f;
-paramElastic.useLegacyOptimizer = false;
-
-new ElasticLayerAlignment().exec(
-	paramElastic,
-	project,
-	layerRange,
-	fixedLayers,
-	emptyLayers,
-	layerset.get2DBounds(),
-	false,
-	false,
-	filter);
-
-/* wait until all mipmaps are generated */
-futures = new ArrayList();
-for (p : layerset.getDisplayables(Patch.class))
-	futures.add(p.updateMipMaps());
-for (f : futures)
-	f.get();
-	
-layerset.setMinimumDimensions();
-	
-/* save the project */
-try {
+	layerset.setMinimumDimensions();
+		
+	/* save the project */
 	project.saveAs(dir + "/project.xml", true);
 }
 catch (e) {
