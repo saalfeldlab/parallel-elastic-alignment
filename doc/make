@@ -1,5 +1,0 @@
-#!/bin/bash
-
-cat header.txt > manual.html
-markdown manual.txt >> manual.html
-cat footer.txt >> manual.html
