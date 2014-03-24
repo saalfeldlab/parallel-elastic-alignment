@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Submit jobs to align pairs of overlapping projects
+#
+# Call:
+#       ./submit-align-overlapping-projects-pair-jobs <file-list> <chunk-size>
+
+n=`wc -l < ${1}`
+mod=${2:-100}
+
+step=$(($mod/2))
+first=0
+last=$(($n-1))
+
+pwd=`pwd`
+mkdir -p $pwd/jobs/log
+cd $pwd/jobs/log
+
+for i in `seq $first $step $(($last-$step))` 
+do
+	range="$i-$(($i+3*$step-1))"
+	qsub -cwd -pe batch 16 $pwd/jobs/align-overlapping-projects-pair-$range
+done
+
+cd $pwd

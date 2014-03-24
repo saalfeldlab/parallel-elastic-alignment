@@ -1,0 +1,135 @@
+/**
+ * Aligns a pair of overlapping projects 
+ * Call
+ *
+ * xvfb-run ./ImageJ-linux64 -Ddir1=<project1 directory> -Ddir2=<project2 directory> -- --no-splash align-overlaping-projects.bsh
+ * 
+ * @author Stephan Saalfeld <saalfeld@mpi-cbg.de>
+ */
+
+import ini.trakem2.ControlWindow;
+import ini.trakem2.Project;
+import ini.trakem2.display.Layer;
+import ini.trakem2.display.Patch;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.process.ImageProcessor;
+import java.awt.geom.AffineTransform;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import mpicbg.ij.TransformMeshMapping;
+import mpicbg.models.CoordinateTransformMesh;
+import mpicbg.models.InterpolatedCoordinateTransform;
+import mpicbg.models.Point;
+import mpicbg.models.PointMatch;
+import mpicbg.trakem2.transform.RigidModel2D;
+import mpicbg.trakem2.transform.TranslationModel2D;
+import mpicbg.trakem2.util.Pair;
+
+double sampleSpacing = 100.0;
+
+Project tryOpenProject(path) {
+	Exception f = null;
+	for (int i = 0; i < 10; ++i) {
+		try {
+			project = Project.openFSProject(path, false);
+			if (project != null)
+				return project;
+		}
+		catch (e) {
+			f = e;
+			f.printStackTrace();
+		}
+		System.out.println("Trial " + i + ", failed to open project \"" + path + "\".");
+		Thread.sleep(1000);
+	}
+	if (f == null)
+		return null;
+	else
+		throw f;
+}
+
+boolean saveTransform(path, transform) {
+	try {
+		fos = new FileOutputStream(path);
+		out = new OutputStreamWriter(fos, "UTF-8");
+		dataString = transform.toDataString();
+		out.write(dataString, 0, dataString.length() );
+		out.close();
+		return true;
+	}
+	catch (e) {
+		return false;
+	}
+}
+
+runtime = Runtime.getRuntime();
+System.out.println(runtime.availableProcessors() + " cores available for multi-threading");
+
+dir1 = System.getProperty("dir1");
+dir2 = System.getProperty("dir2");
+
+ControlWindow.setGUIEnabled(false);
+
+project1 = tryOpenProject(dir1 + "/project.xml");
+project2 = tryOpenProject(dir2 + "/project.xml");
+layerset1 = project1.getRootLayerSet();
+layerset2 = project2.getRootLayerSet();
+
+/* put corresponding layers into a list of Pairs */
+pairs = new ArrayList();
+for (layer1 : layerset1.getLayers()) {
+	for (layer2 : layerset2.getLayers()) {
+		if (layer1.getZ() == layer2.getZ()) {
+			pairs.add(new Pair(layer1, layer2));
+			break;
+		}
+	}
+}
+	
+/* sample point matches */
+/* TODO do it for more than a single patch per layer */
+matches = new ArrayList();
+for (pair : pairs) {
+	System.out.println("layer " + pair.a.getZ());
+	/* corresponding patches */
+	p1 = pair.a.getDisplayables(Patch.class).get(0);
+	p2 = pair.b.getDisplayables(Patch.class).get(0);
+	
+	/* all inclusive CoordinateTransform */
+	ct1 = p1.getFullCoordinateTransform();
+	ct2 = p2.getFullCoordinateTransform();
+	
+	/* generate samples */
+	w = p1.getOWidth();
+	h = p1.getOHeight();
+	for (double y = 0; y < h; y += sampleSpacing) {
+		for (double x = 0; x < w; x += sampleSpacing) {
+			p = new Point(new float[]{(float)x, (float)y });
+			pw = p.getW();
+			p.apply(ct1);
+			p1 = new Point(new float[]{pw[0], pw[1]});
+			p.apply(ct2);
+			p2 = new Point(new float[]{pw[0], pw[1]});
+			matches.add(new PointMatch(p2, p1));
+		}
+	}
+}
+	
+/* estimate pairwise transformation model */
+model = new RigidModel2D();
+//model = new TranslationModel2D();
+model.fit(matches);
+
+/* try to save transform */
+for (i = 0; i < 10 && !saveTransform(dir2 + "/rigid.txt", model); ++i)
+	Thread.sleep(1000);
+
+project1.destroy();
+project2.destroy();
+
+
+/* shutdown */
+runtime.exit(0);
+
