@@ -19,7 +19,7 @@ cd $pwd/jobs/log
 for i in `seq $first $step $(($last-$step))` 
 do
 	range="$i-$(($i+3*$step-1))"
-	qsub -cwd -pe batch 16 $pwd/jobs/align-overlapping-projects-pair-$range
+	qsub -cwd -pe batch 1 $pwd/jobs/align-overlapping-projects-pair-$range
 done
 
 cd $pwd

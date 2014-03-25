@@ -4,6 +4,6 @@ pwd=`pwd`
 mkdir -p $pwd/jobs/log
 cd $pwd/jobs/log
 
-qsub -cwd -pe batch 4 $pwd/jobs/apply-aligned-overlapping-projects
+qsub -cwd -pe batch 1 $pwd/jobs/apply-aligned-overlapping-projects
 
 cd $pwd
