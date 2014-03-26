@@ -38,7 +38,7 @@ Alignment requires that Fiji is installed in `${HOME}/packages/Fiji.app/`.  Plea
 
 		./create-jobs
 
-	The script finds all directories in `./` that match `[digit]+-[digit]+` and creates a a bash-script `./jobs/align-[digit]+-[digit]+` for each.
+	The script finds all directories in `./` that match `[digit]+-[digit]+` and creates a bash-script `./jobs/align-[digit]+-[digit]+` for each.
 
 3.	Submit all jobs:
 
@@ -52,7 +52,7 @@ Alignment requires that Fiji is installed in `${HOME}/packages/Fiji.app/`.  Plea
 
 	The script
 		
-		./clean-trakem2-projects ls-sorted.txt 100
+		./clean-trakem2-mipmaps ls-sorted.txt 100
 
 	removes the generated TrakEM2 supporting files but keeps the `import.txt` and project files.  Use this to save disk space as the supporting files can be regenerated later from the project files.
 
@@ -79,7 +79,7 @@ and, after the job has finished, grep the output for missing images (there shoul
 		  33993.0 missing
 		cd ../..
 
-Open the the `import.txt` files in the corresponding directories and identify the offending image files.  If the files exist and are not broken, try to open and re-save them with ImageJ.  Re-execute the align jobs for the compromised ranges:
+Open the `import.txt` files in the corresponding directories and identify the offending image files.  If the files exist and are not broken, try to open and re-save them with ImageJ.  Re-execute the align jobs for the compromised ranges:
 
 		
 
@@ -137,5 +137,5 @@ Conversely, the script
 
 		./restore-projects
 
-copies the backup copy over the `project.xml` file in all directories in `./` that match `[digit]+-[digit]+`.  Use these scripts to test desctructive parts of the pipeline.
+copies the backup copy over the `project.xml` file in all directories in `./` that match `[digit]+-[digit]+`.  Use these scripts to test destructive parts of the pipeline.
 
