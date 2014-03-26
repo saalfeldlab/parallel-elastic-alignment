@@ -1,0 +1,30 @@
+#!/bin/bash
+
+pwd="`pwd`"
+export="$pwd/export"
+jobs="$pwd/jobs"
+logs="$jobs/log"
+
+mkdir -p "$export/scale10"
+mkdir -p "$export/crop"
+i=0
+for file in `cd $export; ls | grep -P "\.tif$"`
+do
+#	if [ -e "$export/crop/$file" ]
+	if [ -e "$export/scale10/$file" ]
+	then
+		echo "Not submitting existing file '$file'"
+	else
+		script="$export/export-scale-crop-$file.job"
+		echo "#!/bin/bash" > "$script"
+		echo "convert $export/$file -resize 10% $export/scale10/$file" >> "$script"
+		echo "convert $export/$file -crop 768x768+6000+3500 $export/crop/$file" >> "$script"
+		chmod a+x "$script"
+	        cd "$logs"
+	        qsub -cwd $script
+	        cd "$pwd"
+		i=$(($i+1))
+	fi
+done
+echo "$i jobs submitted"
+cd "$pwd"
