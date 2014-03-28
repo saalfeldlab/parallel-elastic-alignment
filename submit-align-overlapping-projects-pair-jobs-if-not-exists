@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# Submit jobs to align pairs of overlapping projects for all ranges where
+# rigid.txt does not exist (where the job had failed earlier)
+#
+# Call:
+#       ./submit-align-overlapping-projects-pair-jobs-if-not-exists <file-list> <chunk-size>
+
+n=`wc -l < ${1}`
+mod=${2:-100}
+
+step=$(($mod/2))
+first=0
+last=$(($n-1))
+
+pwd=`pwd`
+mkdir -p $pwd/jobs/log
+cd $pwd/jobs/log
+
+for i in `seq $first $step $(($last-$step))` 
+do
+	range="$i-$(($i+3*$step-1))"
+	range2="$(($i+$step))-$(($i+3*$step-1))"
+	if [ ! -e "$pwd/$range2/rigid.txt" ]
+        then
+		echo "re-submitting range $range"
+		qsub -cwd -pe batch 1 $pwd/jobs/align-overlapping-projects-pair-$range
+	fi
+done
+
+cd $pwd

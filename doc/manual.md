@@ -96,6 +96,10 @@ Submit them:
 
 		./submit-align-overlapping-projects-pair-jobs ls-sorted.txt 100
 
+On our cluster, a low number of projects will not open correctly, triggering a Sax XML-Parser exception.  Reasons may be manyfold and today beyond my access.  Therefore, resubmit all jobs that haven't delivered a result:
+
+		./submit-align-overlapping-projects-pair-jobs-if-not-exists ls-sorted.txt 100
+
 Then, create the job to accumulate the transformations and update the joint bounding box for all ranges:
 
                 ./create-apply-aligned-overlapping-projects-job ls-sorted.txt 100
