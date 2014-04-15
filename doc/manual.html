@@ -123,10 +123,18 @@
 <pre><code>            ./create-apply-aligned-overlapping-projects-job ls-sorted.txt 100
 </code></pre>
 
-<p>Submit them:</p>
+<p>Submit them (a):</p>
 
 <pre><code>    ./submit-apply-aligned-overlapping-projects-job
 </code></pre>
+
+<p>After the job has finished, you can check the sanity of the resulting project files by calling (b):</p>
+
+<pre><code>    ./sanity-check
+    echo $?
+</code></pre>
+
+<p>If your files are sane, the first line will not produce any output and the second line prints 0. Otherwise, you will see the folders containing corrupt files (first line) and a printed 1 (second line) on stdout. In the latter case, go back to (a) and repeat until there are no corrupt files.</p>
 
 <h2>Export Interpolated Chunks</h2>
 

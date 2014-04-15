@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# Compare project.xml to project.backup.xml for each directory/stack.
+# Project files are considered sane, if project.xml and project.backup.xml are non-empty
+# and their diff is non-empty.
+
+# ./sanity-check [verbose]
+# Verbose option prints the file sizes and diff length for each directory.
+
+# $? equals to 0 if all stacks are sane,
+#              1 otherwise.
+
+PROJECT_NAME="project.xml"
+BACKUP_NAME="project.backup.xml"
+INDENT=""
+if [ "$1" = "verbose" ]; then
+    INDENT="    "
+fi
+
+ANY_NOT_SANE=0
+
+
+# Scan through directories that look like <lower number>-<upper number>.
+# The second wildcard (*) is placed before [0-9] in order to avoid
+# scanning directories such as <lower number>-<upper number>.backup.
+# Consider using find for the use of better regexp.
+
+for d in `ls | grep ^[0-9][0-9]\*-[0-9][0-9]\*\$ | tr ' ' '\n' | sort -n | tail -n +2`; do
+    SANE=1
+    if [ "$1" = "verbose" ]; then
+        echo "Checking project directory $d for sanity..."
+    fi
+    # get file sizes
+    PROJECT_FILE_SIZE="`stat -c %s $d/$PROJECT_NAME`"
+    BACKUP_FILE_SIZE="`stat -c %s $d/$BACKUP_NAME`"
+    # get diff length
+    DIFF_LINE_COUNT="`diff $d/$PROJECT_NAME $d/$BACKUP_NAME | wc -l`"
+    if [ "$1" = "verbose" ]; then
+        echo "$INDENT""$PROJECT_NAME file size: $PROJECT_FILE_SIZE"
+        echo "$INDENT""$BACKUP_NAME file size: $PROJECT_FILE_SIZE"
+        echo "$INDENT""diff contains $DIFF_LINE_COUNT lines"
+    fi
+    # set sanity to zero (and print errors)
+    if [ "$PROJECT_FILE_SIZE" = "0" ]; then
+        SANE=0
+        if [ "$1" = "verbose" ]; then
+            echo "$INDENT""Empty $PROJECT_NAME file in $d"
+        fi
+    fi
+    if [ "$BACKUP_FILE_SIZE" = "0" ]; then
+        SANE=0
+        if [ "$1" = "verbose" ]; then
+            echo "$INDENT""Empty $BACKUP_FILE_NAME file in $d"
+        fi
+    fi
+    if [ "$DIFF_LINE_COUNT" = "0" ]; then
+        if [ "$1" = "verbose" ]; then
+            echo "$INDENT""Empty diff between $d/$PROJECT_NAME and $d/$BACKUP_NAME"
+        fi
+        SANE=0
+    fi;
+    if [ "$SANE" = "0" ]; then
+        ANY_NOT_SANE=1
+        echo "$d";
+    fi
+
+done
+
+# exit with 1 if not all project files were sane
+exit $ANY_NOT_SANE
+

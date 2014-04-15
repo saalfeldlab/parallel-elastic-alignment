@@ -104,10 +104,16 @@ Then, create the job to accumulate the transformations and update the joint boun
 
                 ./create-apply-aligned-overlapping-projects-job ls-sorted.txt 100
 
-Submit them:
+Submit them (a):
 
 		./submit-apply-aligned-overlapping-projects-job
 
+After the job has finished, you can check the sanity of the resulting project files by calling (b):
+
+		./sanity-check
+                echo $?
+
+If your files are sane, the first line will not produce any output and the second line prints 0. Otherwise, you will see the folders containing corrupt files (first line) and a printed 1 (second line) on stdout. In the latter case, go back to (a) and repeat until there are no corrupt files.
 
 
 ## Export Interpolated Chunks
