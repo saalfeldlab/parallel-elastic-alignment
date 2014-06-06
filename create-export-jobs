@@ -22,7 +22,7 @@ n=`wc -l < ${1}`
 mod=${2:-100}
 exportDir="${3:-$PWD}"
 projectBaseDir="${4:-$PWD}"
-numJobs="${5:-1000}"
+numJobs="${5:-500}"
 
 step=$(($mod/2))
 first=0
