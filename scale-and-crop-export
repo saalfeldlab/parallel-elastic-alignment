@@ -2,20 +2,19 @@
 
 pwd="`pwd`"
 export="$pwd/export"
+cropdir="$export/crop"
+scaledir="$export/scale"
 jobs="$pwd/jobs"
 logs="$jobs/log"
 #nJobs=500
 nJobs=10
 
-mkdir -p "$export/scale10"
-#mkdir -p "$export/crop1"
-#mkdir -p "$export/crop2"
-mkdir -p "$export/crop"
+mkdir -p "$scaledir"
+mkdir -p "$cropdir"
 mkdir -p "$jobs"
 mkdir -p "$logs"
 
-n=`find export/ -maxdepth 1 -not -type d | wc -l`
-echo $n
+n=`find export/ -maxdepth 1 -not -type d -name '*tif' | wc -l`
 tasksPerJob=$[$n/$nJobs]
 
 j=1
@@ -40,12 +39,12 @@ do
 	  echo "#!/bin/bash" > "$script"
    fi
 
-	echo "convert $export/$file -resize 10% $export/scale10/$file" >> "$script"
+	echo "convert $export/$file -resize 10% $scaledir/$file" >> "$script"
 #	echo "convert $export/$file -crop 768x768+2900+2400 $export/crop1/$file" >> "$script"
 #	echo "convert $export/$file -crop 768x768+1550+4500 $export/crop2/$file" >> "$script"
 #	echo "convert $export/$file -crop 768x768+3970+5440 $export/crop/$file" >> "$script"
 #	echo "convert $export/$file -crop 768x768+1400+4700 $export/crop/$file" >> "$script"
-	echo "convert $export/$file -crop 2060x5120+3620+2220 $export/crop/$file" >> "$script"
+	echo "convert $export/$file -crop 2060x5120+3620+2220 $cropdir/$file" >> "$script"
 
 	((j++))
 done
