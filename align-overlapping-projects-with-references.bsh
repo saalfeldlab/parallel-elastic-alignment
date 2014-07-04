@@ -1,0 +1,202 @@
+/**
+ * Aligns a series of overlapping projects 
+ * Call
+ *
+ * xvfb-run ./ImageJ-linux64 -Ddir=<projects directory> -Dstart=<first index> -Dend=<last index> -Doverlap=<overlap size>  -- --no-splash align-overlaping-projects.bsh
+ * 
+ * @author Stephan Saalfeld <saalfeld@mpi-cbg.de>
+ */
+
+import ini.trakem2.ControlWindow;
+import ini.trakem2.Project;
+import ini.trakem2.display.Layer;
+import ini.trakem2.display.Patch;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.process.ImageProcessor;
+import java.awt.geom.AffineTransform;
+import java.util.ArrayList;
+import mpicbg.ij.TransformMeshMapping;
+import mpicbg.models.CoordinateTransformMesh;
+import mpicbg.models.InterpolatedCoordinateTransform;
+import mpicbg.models.Point;
+import mpicbg.models.PointMatch;
+import mpicbg.models.RigidModel2D;
+import mpicbg.models.TranslationModel2D;
+import mpicbg.models.Tile;
+import mpicbg.models.TileConfiguration;
+import mpicbg.trakem2.util.Pair;
+
+double sampleSpacing = 100.0;
+
+Project tryOpenProject(path) {
+	Exception f = null;
+	for (int i = 0; i < 10; ++i) {
+		try {
+			project = Project.openFSProject(path, false);
+			if (project != null)
+				return project;
+		}
+		catch (e) {
+			f = e;
+			f.printStackTrace();
+		}
+		System.out.println("Trial " + i + ", failed to open project \"" + path + "\".");
+		Thread.sleep(1000);
+	}
+	if (f == null)
+		return null;
+	else
+		throw f;
+}
+
+runtime = Runtime.getRuntime();
+System.out.println( runtime.availableProcessors() + " cores available for multi-threading" );
+
+dir = System.getProperty("dir");
+start = Integer.parseInt(System.getProperty("start"));
+end = Integer.parseInt(System.getProperty("end"));
+overlap = Integer.parseInt(System.getProperty("overlap"));
+
+ControlWindow.setGUIEnabled(false);
+
+range = start + "-" + (start + overlap + overlap - 1);
+project1 = null;
+project2 = tryOpenProject(dir + "/" + range + "/project.xml");
+layerset1;
+layerset2 = project2.getRootLayerSet();
+
+/* initialize ranges and transformation models */
+ranges = new ArrayList();
+ranges.add(range);
+tiles = new ArrayList();
+tiles.add(new Tile(new RigidModel2D()));
+
+boxes = new ArrayList();
+boxes.add(layerset2.get2DBounds());
+
+for (int a = start + overlap; a < end - overlap; a += overlap) {
+	System.out.println( "range1: " + range );
+	range = a + "-" + (a + 2 * overlap - 1);
+	ranges.add(range);
+	System.out.println("range2: " + range);
+	
+	/* flip and load new project */
+	if (project1 != null)
+		project1.destroy();
+	project1 = project2;
+	project2 = tryOpenProject(dir + "/" + range + "/project.xml");
+	layerset1 = layerset2;
+	layerset2 = project2.getRootLayerSet();
+	
+	/* put corresponding layers into a list of Pairs */
+	pairs = new ArrayList();
+	for (layer1 : layerset1.getLayers()) {
+		for (layer2 : layerset2.getLayers()) {
+			if (layer1.getZ() == layer2.getZ()) {
+				pairs.add(new Pair(layer1, layer2));
+				break;
+			}
+		}
+	}
+	
+	/* sample point matches */
+	/* TODO do it for more than a singel patch per layer */
+	matches = new ArrayList();
+	for (pair : pairs) {
+		System.out.println("layer " + pair.a.getZ());
+		/* corresponding patches */
+		p1 = pair.a.getDisplayables(Patch.class).get(0);
+		p2 = pair.b.getDisplayables(Patch.class).get(0);
+		
+		/* all inclusive CoordinateTransform */
+		ct1 = p1.getFullCoordinateTransform();
+		ct2 = p2.getFullCoordinateTransform();
+		
+		/* generate samples */
+		w = p1.getOWidth();
+		h = p1.getOHeight();
+		for (double y = 0; y < h; y += sampleSpacing) {
+			for (double x = 0; x < w; x += sampleSpacing) {
+				p = new Point(new float[]{(float)x, (float)y });
+				pw = p.getW();
+				p.apply(ct1);
+				p1 = new Point(new float[]{pw[0], pw[1]});
+				p.apply(ct2);
+				p2 = new Point(new float[]{pw[0], pw[1]});
+				matches.add(new PointMatch(p2, p1));
+			}
+		}
+	}
+	
+	/* generate new tile */
+	tile = new Tile(new RigidModel2D());
+	
+	/* connect tile with previous tile */
+	tile.connect(tiles.get(tiles.size() - 1), matches);
+	
+	/* add to tile list */
+	tiles.add(tile);
+	
+	/* collect bounding box */
+	boxes.add(layerset2.get2DBounds());
+}
+
+project1.destroy();
+project2.destroy();
+
+/* create tile configuration and add all tiles */
+tc = new TileConfiguration();
+tc.addTiles(tiles);
+
+/* fix first and last tile */
+tc.fixTile(tiles.get(0));
+tc.fixTile(tiles.get(tiles.size() - 1 ));
+
+/* solve tile configuration */
+tc.optimize(0, 2000, 2000);
+
+/* accumulate bounding boxes */
+box = boxes.get(0); // not deformed
+for (int i = 1; i < boxes.size(); ++i)
+{
+	box2 = boxes.get(i);
+	model = tiles.get(i).getModel();
+	
+	/* estimate local bounds after transformation */
+	min = new float[]{box2.x, box2.y};
+	max = new float[]{box2.x + box2.width - 1, box2.y + box2.height - 1};
+	model.estimateBounds(min, max);
+	
+	/* accumulate bounds */
+	box = box.union(new Rectangle(
+			(int)Math.floor(min[0]),
+			(int)Math.floor(min[1]),
+			(int)Math.ceil(max[0] + 1) - (int)Math.floor(min[0]),
+			(int)Math.ceil(max[1] + 1) - (int)Math.floor(min[1])));
+	
+	System.out.println(model.toString());
+	System.out.println(box.toString());
+}
+
+/* re-box and apply transformation models */
+for (int i = 0; i < ranges.size(); ++i) {
+	affine = tiles.get(i).getModel().createAffine();
+	
+	project = tryOpenProject(dir + "/" + ranges.get(i) + "/project.xml");
+	layerset = project.getRootLayerSet();
+	for (patch : layerset.getDisplayables(Patch.class)) {
+		patch.getAffineTransform().preConcatenate(affine);
+		patch.updateInDatabase("transform");
+		patch.updateBucket();
+	}
+	layerset.setDimensions(box.x, box.y, box.width, box.height);
+	
+	project.save();
+	project.destroy();
+}
+
+
+/* shutdown */
+runtime.exit(0);
+
