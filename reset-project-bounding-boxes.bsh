@@ -1,0 +1,70 @@
+/**
+ * Call
+ *
+ * xvfb-run -a ./ImageJ-linux64 -Ddir=<project directory> -- --no-splash reset-project-bounding-boxes.bsh
+ *
+ * on the cluster with absolute paths, e.g.
+ *
+ * ${HOME}/bin/xvfb-run -a ${HOME}/packages/Fiji.app/fiji-linux64 \
+ *   -Xms10g -Xmx10g -Ddir=${HOME}/AL-FIB-Z0712-12/0-99 \
+ *   -Dfile=${HOME}/AL-FIB-Z0712-12/0-99/import.txt  -- --no-splash \
+ *   ${HOME}/AL-FIB-Z0712-12/AL-FIB-Z0712-12/import-and-align.bsh
+ * 
+ * @author Stephan Saalfeld <saalfeld@mpi-cbg.de>
+ */
+
+import ini.trakem2.ControlWindow;
+import ini.trakem2.Project;
+import ini.trakem2.display.Layer;
+import ini.trakem2.display.Patch;
+import ini.trakem2.utils.Filter;
+import ij.ImagePlus;
+import java.lang.Runtime;
+import java.util.ArrayList;
+import java.util.HashSet;
+import mpicbg.trakem2.align.ElasticLayerAlignment;
+import mpicbg.trakem2.align.RegularizedAffineLayerAlignment;
+
+Project tryOpenProject(path) {
+	Exception f = null;
+	for (int i = 0; i < 10; ++i) {
+		try {
+			project = Project.openFSProject(path, false);
+			if (project != null)
+				return project;
+		}
+		catch (e) {
+			f = e;
+			f.printStackTrace();
+		}
+		System.out.println("Trial " + i + ", failed to open project \"" + path + "\".");
+		Thread.sleep(1000);
+	}
+	if (f == null)
+		return null;
+	else
+		throw f;
+}
+
+try {
+	runtime = Runtime.getRuntime();
+	System.out.println( runtime.availableProcessors() + " cores available for multi-threading" );
+	
+	dir = System.getProperty("dir");
+	
+	ControlWindow.setGUIEnabled(false);
+    project = tryOpenProject(dir + "/project.xml");
+	loader = project.getLoader();
+	layerset = project.getRootLayerSet();
+	layerset.setMinimumDimensions();
+		
+	/* save the project */
+	project.saveAs(dir + "/project_up.xml", true);
+}
+catch (e) {
+	e.printStackTrace();
+}
+
+/* shutdown */
+runtime.exit(0);
+

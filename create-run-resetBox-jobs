@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# Resets the  
+#
+# Call:
+#       ./create-run-resetBox-jobs <file-list> [<chunk-size> <export-dir> <project-base-dir> <num-jobs>]
+# Defaults:
+#   chunks-size:        100
+#   export-dir:         $PWD
+#   project-base-dir:   $PWD
+#   num-jobs            20
+
+if [ $# -lt 2 ]; then
+    echo "Usage: $0 <file-list> [<chunk-size=100> <export-dir=$PWD> <project-base-dir=$PWD> <numJobs=20>]"
+    exit 1
+fi
+
+pwd=`pwd`
+
+n=`wc -l < ${1}`
+mod=${2:-100}
+exportDir="${3:-$PWD}"
+projectBaseDir="${4:-$PWD}"
+numJobs="${5:-20}"
+
+step=$(($mod/2))
+first=0
+last=$(($n-1))
+
+numTasks=$[$n/$mod]
+numTasks=$[2*$numTasks]
+tasksPerJob=$((numTasks / numJobs))
+
+echo "numJobs $numJobs"
+echo "numTasks $numTasks"
+echo "tasks per job: $tasksPerJob"
+
+j=1
+k=0
+
+mkdir -p jobs
+
+job="jobs/resetBox-$k"
+echo "#!/bin/bash" > $job
+
+#for i in `seq $first $step $(($last-3*$step))` 
+for i in `seq $first $step $(($last-$step))` 
+do
+
+	if [ $j -ge $tasksPerJob ]; then
+	   	chmod a+x $job # make the previous job executable
+        # submit the job
+        qsub -cwd -pe batch 2 $job
+
+		j=0	
+		((k++))
+		job="jobs/resetBox-$k"
+		echo "#!/bin/bash" > $job
+	fi
+
+	range1="$i-$(($i+2*$step-1))"
+    echo $range1
+
+	echo "${HOME}/bin/xvfb-run -a ${HOME}/packages/Fiji.app/ImageJ-linux64 -Xms10g -Xmx10g -Ddir=$projectBaseDir/$range1 -- --no-splash $projectBaseDir/reset-project-bounding-boxes.bsh" >> $job
+
+	((j++))
+done
+
+chmod a+x $job # make the last job executable
+qsub -cwd -pe batch 2 $job
+cd $pwd
