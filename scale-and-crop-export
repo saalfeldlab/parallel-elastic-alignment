@@ -6,8 +6,7 @@ cropdir="$export/crop"
 scaledir="$export/scale"
 jobs="$pwd/jobs"
 logs="$jobs/log"
-#nJobs=500
-nJobs=10
+nJobs=50
 
 mkdir -p "$scaledir"
 mkdir -p "$cropdir"
@@ -28,7 +27,7 @@ do
    if [ $j -ge $tasksPerJob ]; then
 	  chmod a+x "$script"
 	  cd "$logs"
-	  qsub -cwd $script # run previous job
+	  qsub -cwd -pe batch 4 $script # run previous job
 	  cd "$pwd"
 
 	  j=0
@@ -51,4 +50,4 @@ done
 cd "$pwd"
 
 chmod a+x "$script"
-qsub -cwd $script # run previous job
+qsub -cwd -pe batch 4 $script # run previous job
