@@ -50,7 +50,7 @@ do
 	if [ $j -ge $tasksPerJob ]; then
 	   	chmod a+x $job # make the previous job executable
         # submit the job
-        qsub -cwd -pe batch 2 $job
+        qsub -cwd -pe batch 1 $job
 
 		j=0	
 		((k++))
@@ -67,5 +67,5 @@ do
 done
 
 chmod a+x $job # make the last job executable
-qsub -cwd -pe batch 2 $job
+qsub -cwd -pe batch 1 $job
 cd $pwd
