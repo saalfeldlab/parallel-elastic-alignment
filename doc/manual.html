@@ -99,7 +99,9 @@
 
 <p>Open the <code>import.txt</code> files in the corresponding directories and identify the offending image files.  If the files exist and are not broken, try to open and re-save them with ImageJ.  Re-execute the align jobs for the compromised ranges:</p>
 
-<h2>Rigidly Align Series of Chunks</h2>
+<h2>Rigidly Align Series of Chunks<a name="rigid"></a></h2>
+
+<p>We recommend <a href="#backup">creating backup copies</a> of the <code>project.xml</code> files before running rigid alignment.</p>
 
 <p>As series chunks overlap by 50%, each image is present in two independent chunks (except the first and last half chunks).  While we expect 'elastic' deformation to be averaged away, the relative orientation of two chunks is completely arbitrary.  Therefore, we align the series of chunks with a rigid transformation.  To that end, corresponding locations are sampled in the overlapping parts of two chunks, and then, for all chunks, a rigid transformation is estimated such that the sum of all square displacements is minimized.  The rigid transformations can be estimated pairwise and are accumulated later.</p>
 
@@ -131,7 +133,7 @@
 <p>After the job has finished, you can check the sanity of the resulting project files by calling (b):</p>
 
 <pre><code>    ./sanity-check
-    echo $?
+            echo $?
 </code></pre>
 
 <p>If your files are sane, the first line will not produce any output and the second line prints 0. Otherwise, you will see the folders containing corrupt files (first line) and a printed 1 (second line) on stdout. In the latter case, go back to (a) and repeat until there are no corrupt files.</p>
@@ -159,6 +161,8 @@
 
 <h2>Other Stuff</h2>
 
+<h3>Backing up projects<a name="backup"></a></h3>
+
 <p>The script</p>
 
 <pre><code>    ./backup-projects
@@ -172,6 +176,21 @@
 </code></pre>
 
 <p>copies the backup copy over the <code>project.xml</code> file in all directories in <code>./</code> that match <code>[digit]+-[digit]+</code>.  Use these scripts to test destructive parts of the pipeline.</p>
+
+<h3>Re-running specific chunks</h3>
+
+<p>Occasionally, a set of parameters will give rise to undesired behavior.  Re-running the elastic alignment for only the ranges with such behavior is desirable both to save unnecessary computation and headaches.  First, it is good practice to save a copy of <code>import-and-align.bsh</code> as a record of the parameters used to align the chunks that you will not be adjusting further.</p>
+
+<p>Next, to help select parameters for the troublesome chunks, use the <a href="http://fiji.sc/Elastic_Alignment_and_Montage">"Extract Block Matching Correspondences"</a> plugin in Fiji.  Once the parameters are selected, copy them into <code>import-and-align.bsh</code>, and then run the <code>align-&lt;range&gt;</code> scripts for the relevant chunks.  Visually inspect the results of these newly aligned chunks.</p>
+
+<p>Next, reset the bounding boxes of the TrakEM2 projects using the script</p>
+
+<pre><code>    ./create-run-resetBox-jobs
+</code></pre>
+
+<p>This step is necessary to ensure that the rigid alignment step to follow runs correctly.</p>
+
+<p>Finally, re-run the <a href="#rigid">rigid alignment</a> as described above.</p>
 </body>
 </html>
 

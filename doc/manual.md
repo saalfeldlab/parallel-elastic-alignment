@@ -84,7 +84,9 @@ Open the `import.txt` files in the corresponding directories and identify the of
 		
 
 
-## Rigidly Align Series of Chunks
+## Rigidly Align Series of Chunks<a name="rigid"></a>
+
+We recommend [creating backup copies](#backup) of the `project.xml` files before running rigid alignment.
 
 As series chunks overlap by 50%, each image is present in two independent chunks (except the first and last half chunks).  While we expect 'elastic' deformation to be averaged away, the relative orientation of two chunks is completely arbitrary.  Therefore, we align the series of chunks with a rigid transformation.  To that end, corresponding locations are sampled in the overlapping parts of two chunks, and then, for all chunks, a rigid transformation is estimated such that the sum of all square displacements is minimized.  The rigid transformations can be estimated pairwise and are accumulated later.
 
@@ -137,6 +139,8 @@ We are now ready to export the entire series by interpolating the estimated tran
 
 ## Other Stuff
 
+### Backing up projects<a name="backup"></a>
+ 
 The script
 
 		./backup-projects
@@ -149,3 +153,18 @@ Conversely, the script
 
 copies the backup copy over the `project.xml` file in all directories in `./` that match `[digit]+-[digit]+`.  Use these scripts to test destructive parts of the pipeline.
 
+
+### Re-running specific chunks 
+
+Occasionally, a set of parameters will give rise to undesired behavior.  Re-running the elastic alignment for only the ranges with such behavior is desirable both to save unnecessary computation and headaches.  First, it is good practice to save a copy of `import-and-align.bsh` as a record of the parameters used to align the chunks that you will not be adjusting further.
+
+Next, to help select parameters for the troublesome chunks, use the ["Extract Block Matching Correspondences"](http://fiji.sc/Elastic_Alignment_and_Montage) plugin in Fiji.  Once the parameters are selected, copy them into `import-and-align.bsh`, and then run the `align-<range>` scripts for the relevant chunks.  Visually inspect the results of these newly aligned chunks.
+
+
+Next, reset the bounding boxes of the TrakEM2 projects using the script
+
+		./create-run-resetBox-jobs
+
+This step is necessary to ensure that the rigid alignment step to follow runs correctly.
+
+Finally, re-run the [rigid alignment](#rigid) as described above.
