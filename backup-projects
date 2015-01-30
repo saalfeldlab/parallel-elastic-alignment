@@ -1,6 +1,13 @@
 #!/bin/bash
 
+if [ "$#" -ge 1 ]; then
+    suffix=$1
+else
+    suffix="backup"
+fi
+
 for dir in `ls | grep ^[0-9][0-9]\*-[0-9][0-9]\*\$`
 do
-	cp $dir/project.xml $dir/project.backup.xml
+	#cp $dir/project.xml $dir/project.backup.xml
+	echo "$dir/project.$suffix.xml"
 done
