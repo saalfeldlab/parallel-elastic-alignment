@@ -1,0 +1,23 @@
+import ij.IJ;
+import ij.ImagePlus;
+import ij.process.ImageProcessor;
+import ij.process.Blitter;
+import mpicbg.ij.util.Util;
+import mpicbg.ij.plugin.NormalizeLocalContrast;
+
+int paddingX = 500;
+int paddingY = 500;
+int brx = 500;
+int bry = 500;
+float stds = 3.0;
+
+try {
+	NormalizeLocalContrast.run(imp.getProcessor(), brx, bry, stds, true, true);
+	ip = imp.getProcessor().createProcessor(imp.getWidth() + 2 * paddingX, imp.getHeight() + 2 * paddingY);
+	Util.fillWithNoise( ip );
+	ip.copyBits(imp.getProcessor(), paddingX, paddingY, Blitter.COPY);
+	imp.setProcessor(imp.getTitle(), ip);
+}
+catch (Exception e) {
+	e.printStackTrace(System.err);
+}
