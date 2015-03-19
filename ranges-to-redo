@@ -1,0 +1,102 @@
+#!/bin/bash
+
+printHuman=0
+
+if [ $1 ] && [ $1 = "-h" ]; then
+    printHuman=1
+    shift;
+fi
+
+pwd=`pwd`
+
+subJobsFile="${1:-"$pwd/subJobs.pae"}"
+basedir="${2:-"$pwd"}"
+logdir="${3:-"$pwd/jobs/log"}"
+
+#subJobsFile="$1"
+#basedir="$2"
+#logdir="$3"
+
+#echo $subJobsFile
+#echo $basedir
+#echo $logdir
+
+rangesToResub=""
+
+while read line;
+do
+
+    id=`echo $line | cut -d ' ' -f3` 
+    #echo "id: $id"
+
+    range=`echo $line | sed 's/.*("align-\(.*\)").*/\1/g'` 
+    #echo "range: $range"
+
+    rOutFn="$logdir/align-$range.o$id"
+    rErrFn="$logdir/align-$range.e$id"
+
+    backupMissing=1
+    if [ -e "$basedir/project.elastic.xml" ]
+    then
+        backupMissing=0
+    fi
+
+    resubRange=0
+    needsHumanFix=0
+    reason=""
+
+    # check the log output for 
+    if [ ! -e $rOutFn ] && [ $backupMissing ];
+    then
+        #echo "debug - missing output log for range: $range" 
+        resubRange=1
+    fi
+    if [ ! -e $rErrFn ];
+    then
+        #echo "debug - missing error log for range: $range" 
+        resubRange=1
+    fi
+
+    # Look for error cases that 
+    # may need human interaction
+    isNonTrivialError=`wc -l $rErrFn | cut -d ' ' -f1`
+    if [ $isNonTrivialError -gt 0 ];
+    then
+        needsHumanFix=1
+        reason="$reason non-trivial-error"
+    fi
+
+    areMissingLayers=`grep -c "FAIL - MISSING LAYERS" $rOutFn`
+    if [ $areMissingLayers -gt 0 ];
+    then
+        missingLayers=`grep "FAIL - MISSING LAYERS" $rOutFn`
+        needsHumanFix=1
+        reason="$reason Missing-layers: $missingLayers"
+    fi
+
+    areFilesMissing=`grep -c "No file found" $rOutFn`
+    if [ $areFilesMissing -gt 0 ] 
+    then
+        filesMissing=`grep "No file found" $rOutFn`
+        needsHumanFix=1
+        reason="$reason file-missing $filesMissing"
+    fi
+
+    taskComplete=`grep -c "TASK COMPLETE" $rOutFn`
+    if [ $taskComplete == 0 ]
+    then
+        resubRange=1
+    fi
+
+    if [ $resubRange = 1 ];
+    then
+        echo "$range"
+    fi
+
+    if [ $needsHumanFix = 1 ] && [ $printHuman = 1 ];
+    then
+        echo "$range - $reason"
+    fi
+
+done <"$subJobsFile"
+

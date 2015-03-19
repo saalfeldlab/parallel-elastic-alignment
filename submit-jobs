@@ -5,10 +5,15 @@ ranges=`ls | grep ^[0-9][0-9]\*-[0-9][0-9]\*\$ | sort -g`
 pwd=`pwd`
 mkdir -p $pwd/jobs/log
 cd $pwd/jobs/log
+submittedJobsFile="$pwd/subJobs.pae"
+
+if [ -e $submittedJobsFile ]; then
+    rm $submittedJobsFile
+fi
 
 for range in $ranges
 do
-	qsub -cwd -pe batch 4 $pwd/jobs/align-$range
+	qsub -cwd -V -pe batch 5 "$pwd/jobs/align-$range" >> $submittedJobsFile
 done
 
 cd $pwd

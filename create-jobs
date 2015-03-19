@@ -8,7 +8,7 @@ do
 	abs="$pwd/$range"
 
 	echo "#!/bin/bash" > jobs/align-$range
-	echo "${HOME}/bin/xvfb-run -a ${HOME}/packages/Fiji.app/fiji-linux64 -Xms10g -Xmx10g -Ddir=$abs -Dfile=$abs/import.txt  -- --no-splash ${pwd}/import-and-align.bsh" >> jobs/align-$range
+	echo "${HOME}/bin/xvfb-run -a ${HOME}/packages/Fiji.app/fiji-linux64 -Xms10g -Xmx10g -Ddir=$abs -Dfile=$abs/import.txt  -- --no-splash ${pwd}/import-check-align.bsh" >> jobs/align-$range
 	chmod a+x jobs/align-$range
 done
 

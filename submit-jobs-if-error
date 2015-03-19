@@ -1,0 +1,49 @@
+#!/bin/bash
+
+dryRun=0
+if [ $1 ] && [ $1 = "-d" ]; then
+    dryRun=1
+fi
+
+pwd=`pwd`
+mkdir -p $pwd/jobs/log
+cd $pwd/jobs/log
+logdir=`pwd`
+
+subJobsFile="$pwd/subJobs.pae"
+
+# Make a backup of the submitted jobs file
+dt=`date +%Y%m%d%H%M%S`
+sjfBak="$subJobsFile"_"$dt".bak
+
+#echo "sjf: $subJobsFile"
+#echo "sjfbak: $sjfBak"
+
+cp $subJobsFile $sjfBak
+if [ $dryRun = 0 ]; then
+    rm $subJobsFile
+fi
+
+numresub=0
+for range in `$pwd/ranges-to-redo $sjfBak $pwd $logdir` 
+do
+    if [ $dryRun = 1 ]; then
+        echo "$range"
+        ((numresub++))
+    fi
+
+    if [ $dryRun = 0 ]; then
+        echo "re-submitted range $range"
+        qsub -cwd -V -pe batch 5 "$pwd/jobs/align-$range" > $subJobsFile
+        ((numresub++))
+    fi
+done
+
+if [ $dryRun = 1 ]; then
+    rm $sjfBak
+fi
+
+echo "rerunning $numresub jobs" 
+
+cd $pwd
+
