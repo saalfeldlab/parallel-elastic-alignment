@@ -2,7 +2,8 @@
 
 printHuman=0
 
-if [ -z $1 ] && [ $1 = "-h" ]; then
+#if [ -z $1 ] && [ $1 = "-h" ]; then
+if [ -z "$1" ] && [ "$1" = "-h" ]; then
     printHuman=1
     shift;
 fi
@@ -103,7 +104,7 @@ do
         reason="$reason no task-complete"
     fi
 
-    if [ ! -e $basedir/$range/projects.elastic.xml ]
+    if [ ! -e $basedir/$range/project.elastic.xml ]
     then
         resubRange=1
         reason="$reason no elastic backup"
