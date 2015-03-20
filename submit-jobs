@@ -13,6 +13,7 @@ fi
 
 for range in $ranges
 do
+    echo "submitting range: $range"
 	qsub -cwd -V -pe batch 5 "$pwd/jobs/align-$range" >> $submittedJobsFile
 done
 
