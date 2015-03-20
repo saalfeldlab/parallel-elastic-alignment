@@ -44,6 +44,14 @@ Alignment requires that Fiji is installed in `${HOME}/packages/Fiji.app/`.  Plea
 
 		./submit-jobs
 
+	Check for projects with errors  
+		
+		./ranges-to-redo -h  
+
+    the `-h` suffix indicates that the output will be printed in a human-readable format.  The script will output any rangest that failed for `non-trivial` reasons.  After addressing any potential problems, resubmit the remaining jobs with
+
+		./submit-jobs-if-error
+
 	The script
 		
 		./clean-trakem2-projects ls-sorted.txt 100
