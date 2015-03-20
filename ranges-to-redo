@@ -50,11 +50,13 @@ do
     then
         #echo "debug - missing output log for range: $range" 
         resubRange=1
+        reason="$reason missing output log"
     fi
     if [ ! -e $rErrFn ];
     then
         #echo "debug - missing error log for range: $range" 
         resubRange=1
+        reason="$reason missing error log"
     fi
 
     # Look for error cases that 
@@ -63,7 +65,17 @@ do
     if [ $isNonTrivialError -gt 0 ];
     then
         needsHumanFix=1
+        resubRange=1
         reason="$reason non-trivial-error"
+    fi
+
+    isTopLevelErr=`grep -c "xvfb" $rOutFn`
+    if [ $isTopLevelErr -gt 0 ];
+    then
+        topLevelErr=`grep "xvfb" $rOutFn`
+        needsHumanFix=1
+        resubRange=1
+        reason="$reason top level: $topLevelErr"
     fi
 
     areMissingLayers=`grep -c "FAIL - MISSING LAYERS" $rOutFn`
@@ -71,6 +83,7 @@ do
     then
         missingLayers=`grep "FAIL - MISSING LAYERS" $rOutFn`
         needsHumanFix=1
+        resubRange=1
         reason="$reason Missing-layers: $missingLayers"
     fi
 
@@ -79,6 +92,7 @@ do
     then
         filesMissing=`grep "No file found" $rOutFn`
         needsHumanFix=1
+        resubRange=1
         reason="$reason file-missing $filesMissing"
     fi
 
@@ -86,16 +100,24 @@ do
     if [ $taskComplete == 0 ]
     then
         resubRange=1
+        reason="$reason no task-complete"
+    fi
+
+    if [ ! -e $basedir/$range/projects.elastic.xml ]
+    then
+        resubRange=1
+        reason="$reason no elastic backup"
     fi
 
     if [ $resubRange = 1 ];
     then
-        echo "$range"
-    fi
-
-    if [ $needsHumanFix = 1 ] && [ $printHuman = 1 ];
-    then
-        echo "$range - $reason"
+        #if [ $needsHumanFix = 1 ] && [ $printHuman = 1 ];
+        if [ $printHuman = 1 ];
+        then
+            echo "$range - $reason"
+        else
+            echo "$range"
+        fi
     fi
 
 done <"$subJobsFile"
