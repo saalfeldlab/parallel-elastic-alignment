@@ -117,8 +117,9 @@ try {
     
     didBackup = backupProject( dir, "import" );
 
-    System.out.println( "exiting early for debug ");
-    runtime.exit(0);
+    //System.out.println( "exiting early for debug ");
+    //System.out.println("TASK COMPLETE");
+    //runtime.exit(0);
 
     System.out.println("add preprocessor");
     /* Add preprocessor */
