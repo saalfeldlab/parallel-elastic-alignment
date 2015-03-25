@@ -1,0 +1,95 @@
+#!/bin/bash
+
+# Checks whether the current project.xml or rigid.txt files agrees
+# with a particular backup.
+#
+# Usage:
+#   is-backup-active [-s <suffix>] [-v] [-p] [-r] 
+# 
+#   -s : sets the suffix used to identify the backup 
+#        (i.e. <prefix>.suffix.<extension> ) #   #   defaults to: #   is-backup-active -s backup -p 
+#   -p : check project.xml files
+#   -r : check rigid.txt files
+#   -v : be verbose
+
+PREFIX="project"
+EXTENSION="xml"
+suffix="backup"
+verbose=0;
+
+# parse arguments
+while true; do
+    case "$1" in 
+        -p ) 
+            PREFIX="project"
+            EXTENSION="xml"
+            shift
+        ;;
+        -r )
+            PREFIX="rigid"
+            EXTENSION="txt"
+            shift
+        ;;
+        -v ) 
+            verbose=1
+            shift
+        ;;
+        -s ) 
+            suffix=$2 
+            shift 2
+        ;;
+        * )
+            break
+        ;;
+    esac
+done;
+
+PROJECT_NAME="$PREFIX.$EXTENSION"
+BACKUP_NAME="$PREFIX.$suffix.$EXTENSION"
+
+if [ $verbose == 1 ]; then
+    echo "project name: $PROJECT_NAME" 
+    echo "backup  name: $BACKUP_NAME"
+fi
+
+
+for d in `ls | grep ^[0-9][0-9]\*-[0-9][0-9]\*\$ | tr ' ' '\n' | sort -n | tail -n +2`; do
+    if [ $verbose == 1 ]; then
+        echo "Checking project directory $d ..."
+    fi
+
+    if [ ! -e $d/$BACKUP_NAME ];
+    then
+        echo "$INDENT""MISSING $d"
+        continue
+    fi
+
+    # get file sizes
+    PROJECT_FILE_SIZE="`stat -c %s $d/$PROJECT_NAME`"
+    BACKUP_FILE_SIZE="`stat -c %s $d/$BACKUP_NAME`"
+
+    # get diff length
+    DIFF_LINE_COUNT="`diff $d/$PROJECT_NAME $d/$BACKUP_NAME | wc -l`"
+    if [ $verbose == 1 ]; then
+        echo "$INDENT""$PROJECT_NAME file size: $PROJECT_FILE_SIZE"
+        echo "$INDENT""$BACKUP_NAME file size: $PROJECT_FILE_SIZE"
+        echo "$INDENT""diff contains $DIFF_LINE_COUNT lines"
+    fi
+    # set sanity to zero (and print errors)
+    if [ "$PROJECT_FILE_SIZE" = "0" ]; then
+        if [ "$1" = "verbose" ]; then
+            echo "$INDENT""Empty $PROJECT_NAME file in $d"
+        fi
+    fi
+    if [ "$BACKUP_FILE_SIZE" = "0" ]; then
+        if [ "$1" = "verbose" ]; then
+            echo "$INDENT""Empty $BACKUP_FILE_NAME file in $d"
+        fi
+    fi
+    if [ "$DIFF_LINE_COUNT" = "0" ]; then
+        echo "$INDENT""GOOD $d"
+    else
+        echo "$INDENT""BAD $d"
+    fi;
+
+done;
