@@ -1,0 +1,62 @@
+import ini.trakem2.ControlWindow;
+import ini.trakem2.Project;
+import ini.trakem2.display.Layer;
+import ini.trakem2.display.Patch;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.process.ImageProcessor;
+import java.lang.Runtime;
+import java.lang.String;
+import java.lang.Integer;
+import java.util.ArrayList;
+import mpicbg.ij.TransformMeshMapping;
+import mpicbg.models.CoordinateTransformMesh;
+import mpicbg.models.InterpolatedCoordinateTransform;
+
+int meshResolution = 128;
+
+runtime = Runtime.getRuntime();
+System.out.println( runtime.availableProcessors() + " cores available for multi-threading" );
+
+dir  = System.getProperty("dir");
+rangeStr = System.getProperty("range");
+export = System.getProperty("export");
+
+range = Integer.parseInt( rangeStr );
+halfRange = range/2;
+
+firstRange="0-"+(range-1);
+System.out.println( "dir: " + dir );
+System.out.println( "firstRange: " + firstRange );
+
+ControlWindow.setGUIEnabled(false);
+
+project1 = Project.openFSProject( dir + "/" + firstRange + "/project.xml", false);
+layerset = project1.getRootLayerSet();
+layerset.setSnapshotsMode(1);
+
+box = layerset.get2DBounds();
+
+//for (int i = 0; i < layerList.size(); i++) {
+/* scan through layers */
+for ( layer : layerset.getLayers() ) {
+	patch    = layer.getDisplayables( Patch.class ).get(0);
+
+    if( layer.getZ() >= halfRange ){
+        continue;
+    }
+		
+    ct = patch.getFullCoordinateTransform();
+    ip = patch.getImageProcessor();
+    ip.setInterpolationMethod(ImageProcessor.BILINEAR);
+    ipExport = ip.createProcessor(box.width, box.height);
+
+    mesh = new CoordinateTransformMesh(ct, meshResolution, ip.getWidth(), ip.getHeight());
+    mapping = new TransformMeshMapping(mesh);
+    mapping.mapInterpolated(ip, ipExport);
+
+    imp = new ImagePlus( "", ipExport );
+    System.out.println( "saving: " + imp );
+    IJ.save(imp, export + "/" + patch.getTitle() + ".tif");
+
+}

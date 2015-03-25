@@ -14,7 +14,7 @@
 #   num-jobs            500
 
 if [ $# -lt 2 ]; then
-    echo "Usage: $0 <file-list> [<chunk-size=100> <export-dir=$PWD> <project-base-dir=$PWD> <numJobs=500>]"
+    echo "Usage: $0 <file-list> [<chunk-size=100> <export-dir=$PWD> <project-base-dir=$PWD> <numJobs=20>]"
     exit 1
 fi
 
@@ -22,7 +22,7 @@ n=`wc -l < ${1}`
 mod=${2:-100}
 exportDir="${3:-$PWD}"
 projectBaseDir="${4:-$PWD}"
-numJobs="${5:-500}"
+numJobs="${5:-20}"
 
 step=$(($mod/2))
 first=0
@@ -62,10 +62,13 @@ do
 	range1="$i-$(($i+2*$step-1))"
 	range2="$(($i+$step))-$(($i+3*$step-1))"
 
-	echo "${HOME}/bin/xvfb-run -a ${HOME}/packages/Fiji.app/fiji-linux64 -Xms10g -Xmx10g -Ddir1=$projectBaseDir/$range1 -Ddir2=$projectBaseDir/$range2 -Dexport=$exportDir/export  -- --no-splash $projectBaseDir/open-and-export-project-intersection.bsh" >> $job
+	echo "${HOME}/bin/xvfb-run -a ${HOME}/packages/Fiji.app/ImageJ-linux64 -Xms10g -Xmx10g -Ddir1=$projectBaseDir/$range1 -Ddir2=$projectBaseDir/$range2 -Dexport=$exportDir/export  -- --no-splash $projectBaseDir/open-and-export-project-intersection.bsh" >> $job
 	#chmod a+x $job
 
 	((j++))
 done
+
+# Add a job to export the first half of the first range
+echo "${HOME}/bin/xvfb-run -a ${HOME}/packages/Fiji.app/ImageJ-linux64 -Xms10g -Xmx10g -Ddir=$projectBaseDir -Drange=$mod -Dexport=$exportDir/export  -- --no-splash $projectBaseDir/export_first_half_range.bsh" >> $job
 
 chmod a+x $job # make the last job executable
