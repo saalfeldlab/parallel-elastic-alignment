@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Check and fix tifs and creates corrected copies in the 'fixed' directory
+# 
+# Usage:
+#   ./checkAndFixTifs <list file> 
+
+basedir=`pwd`
+list="$1"
+
+# use this variable to build command to replace lines with problematic files
+sedcmd="" 
+
+FIJIHOME="$HOME/packages/Fiji.app"
+
+# build java classpath
+cp=`find "$FIJIHOME/jars" -name '*jar' | tr '\n' ':'`
+cp+=`find "$FIJIHOME/plugins" -name '*jar' | tr '\n' ':'`
+cp+="$basedir/lib/AlignFixIo-0.0.1-SNAPSHOT.jar"
+
+mkdir -p fixed
+numFixed=0
+
+for f in `java -cp $cp FixTrakEM2Io "$basedir/$list"`
+do
+    fout=${f##*/} # remove the path of the input file to get just the name
+    fnew="$basedir/fixed/$fout" 
+
+    convert $f $fnew # resave it in the 'fixed' directory
+
+    # modify the list.txt file
+    sedcmd+="-e s:$f:$fnew: "
+    ((numFixed++))
+done
+
+# run sed once with all commands and save 
+sed "$sedcmd" "$basedir/$list" > "$basedir/list-fixed.txt"
+
+echo "$numFixed file(s) needed fixing"
