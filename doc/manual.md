@@ -6,6 +6,10 @@ We split elastic alignment of the entire series into parallel alignment jobs for
 
 ## Preparation
 
+0.  Make sure fiji is installed with an executable at:
+
+        ~/packages/Fiji.app/fiji-linux64
+
 1.	Create a list of all files to be imported with their absolute paths:
 
 		find /groups/flyem/data/AL-Z0613-14/raw/ -name "*.tif" | sort > ls-sorted.txt
@@ -16,7 +20,13 @@ We split elastic alignment of the entire series into parallel alignment jobs for
 
 2.	Identify an appropriate contrast range [*min*, *max*] for the images by manually inspecting them.  In fact, contrast can be estimated automatically, but that requires to open each individual image during import which is significant I/O overhead.  A good contrast range for alignment shows the texture to-be-aligned clearly while not being excessively saturated.  Open the image in *ImageJ*, open the *Adjust Brightness and Contrast* dialog and find appropriate values.  Test the values on other images in the series.
 
-3.	Prepare a series of directories with TrakEM2 import.txt files for 50% overlapping chunks of specified size from the list, e.g.:
+3. When many tif files are generated, some may not be readable by the due to header issues.  Validate and correct the files with 
+
+        ./checkAndFixTifs list-sorted.txt    
+
+    which will test all the filest in list-sorted.txt, if a file is unreadable it will attempt to create a readable copy in a new directory called 'fixed,' and a new text file, 'list-sorted-fixed', is created where any problematic files are replaced with their corresponding versions in the 'fixed' directory.
+
+4.	Prepare a series of directories with TrakEM2 import.txt files for 50% overlapping chunks of specified size from the list, e.g.:
 
 		./make-import-overlap ls-sorted.txt 100 16000 31000 1
 
