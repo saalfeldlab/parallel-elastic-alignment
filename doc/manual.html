@@ -7,85 +7,83 @@
 <body>
 
 <h1>Documentation</h1>
-
 <p>Elastic alignment of long FIB-SEM series.</p>
-
 <p>We split elastic alignment of the entire series into parallel alignment jobs for chunks with fix size (e.g. 100) that are overlapping by 50% (e.g. 0-99, 50-149, 100-199, ...).  The independently aligned chunks are then aligned to each other with a rigid transformation that is calculated from a sample of corresponding locations across the overlapping ranges.  Finally, sections are exported with a transformation that is the linear interpolant of both independently estimated transformations in the overlapping range, weights run from 0-1 across the range.</p>
-
+<h2>Preliminaries</h2>
+<p>Make sure fiji is installed with an executable at:</p>
+<pre><code>    ~/packages/Fiji.app/fiji-linux6 4
+</code></pre>
 <h2>Preparation</h2>
-
 <ol>
-<li><p>Create a list of all files to be imported with their absolute paths:</p>
-
+<li>
+<p>Create a list of all files to be imported with their absolute paths:</p>
 <pre><code>find /groups/flyem/data/AL-Z0613-14/raw/ -name "*.tif" | sort &gt; ls-sorted.txt
 </code></pre>
-
 <p>For testing, extract a subset, e.g.:</p>
-
 <pre><code>head -n 200 ls-sorted.txt &gt; ls-sorted.0-199.txt
-</code></pre></li>
-<li><p>Identify an appropriate contrast range [<em>min</em>, <em>max</em>] for the images by manually inspecting them.  In fact, contrast can be estimated automatically, but that requires to open each individual image during import which is significant I/O overhead.  A good contrast range for alignment shows the texture to-be-aligned clearly while not being excessively saturated.  Open the image in <em>ImageJ</em>, open the <em>Adjust Brightness and Contrast</em> dialog and find appropriate values.  Test the values on other images in the series.</p></li>
-<li><p>Prepare a series of directories with TrakEM2 import.txt files for 50% overlapping chunks of specified size from the list, e.g.:</p>
-
+</code></pre>
+</li>
+<li>
+<p>Identify an appropriate contrast range [<em>min</em>, <em>max</em>] for the images by manually inspecting them.  In fact, contrast can be estimated automatically, but that requires to open each individual image during import which is significant I/O overhead.  A good contrast range for alignment shows the texture to-be-aligned clearly while not being excessively saturated.  Open the image in <em>ImageJ</em>, open the <em>Adjust Brightness and Contrast</em> dialog and find appropriate values.  Test the values on other images in the series.</p>
+</li>
+<li>
+<p>When many tif files are generated, some may not be readable by the due to header issues.  Validate and correct the files with </p>
+<pre><code>./checkAndFixTifs list-sorted.txt
+</code></pre>
+<p>which will test all the filest in list-sorted.txt, if a file is unreadable it will attempt to create a readable copy in a new directory called 'fixed,' and a new text file, 'list-sorted-fixed', is created where any problematic files are replaced with their corresponding versions in the 'fixed' directory.</p>
+</li>
+<li>
+<p>Prepare a series of directories with TrakEM2 import.txt files for 50% overlapping chunks of specified size from the list, e.g.:</p>
 <pre><code>./make-import-overlap ls-sorted.txt 100 16000 31000 1
 </code></pre>
-
 <p>The name of the directory is the series range, e.g. '0-49', '0-99', '50-149', '100-199', ... The respective <code>import.txt</code> file specifies the <em>x</em>, <em>y</em>, <em>z</em> location of each image (<em>x</em>, <em>y</em> is 0, <em>z</em> is a running integer, its dimensions ('-' to let TrakEM2 figure it out), a preferred contrast range [<em>min</em>, <em>max</em>] and the image type (0: <code>uint8</code> (gray), 1: <code>uint16</code> (gray), 2: <code>float32</code> (gray), 3: <code>uint8</code> (indexed color), 4s: <code>uint32</code> (RGB color))</p>
-
 <p>The script</p>
-
 <pre><code>./clean-import-overlap ls-sorted.txt 100
 </code></pre>
-
-<p>removes the generated directories recursively.  Use it to clean up and start from scratch.</p></li>
+<p>removes the generated directories recursively.  Use it to clean up and start from scratch.</p>
+</li>
 </ol>
-
 <h2>Import and Align Chunks</h2>
-
 <p>Alignment requires that Fiji is installed in <code>${HOME}/packages/Fiji.app/</code>.  Please use the version from <code>/groups/jain/home/saalfelds/packages/Fiji.app</code> which is a custom build that has been tested.</p>
-
 <ol>
-<li><p>Modify the parameters in the script <code>import-and-align.bsh</code> to your needs.  Test alignment parameters on a representative chunk.  In an interactive graphical session, open Fiji, create a new TrakEM2 project and import the chunk.  First, test affine alignment parameters (<code>paramAffine</code>), although I do not expect much need for adjustment here.  Then align the series with those parameters.  Save the project.  Export a chunk of 5 sections around the worst spot of the affinely aligned series as an RGB stack with green (0, 255, 0) background.  Test blockmatching parameters as described at the <a href="http://fiji.sc/Test_Block_Matching_Parameters">Fiji Wiki</a>.  Then adjust the elastic alignment parameters (<code>paramElastic</code>) accordingly.</p></li>
-<li><p>Create parallel jobs for import and alignment:</p>
-
+<li>
+<p>Modify the parameters in the script <code>import-and-align.bsh</code> to your needs.  Test alignment parameters on a representative chunk.  In an interactive graphical session, open Fiji, create a new TrakEM2 project and import the chunk.  First, test affine alignment parameters (<code>paramAffine</code>), although I do not expect much need for adjustment here.  Then align the series with those parameters.  Save the project.  Export a chunk of 5 sections around the worst spot of the affinely aligned series as an RGB stack with green (0, 255, 0) background.  Test blockmatching parameters as described at the <a href="http://fiji.sc/Test_Block_Matching_Parameters">Fiji Wiki</a>.  Then adjust the elastic alignment parameters (<code>paramElastic</code>) accordingly.</p>
+</li>
+<li>
+<p>Create parallel jobs for import and alignment:</p>
 <pre><code>./create-jobs
 </code></pre>
-
-<p>The script finds all directories in <code>./</code> that match <code>[digit]+-[digit]+</code> and creates a bash-script <code>./jobs/align-[digit]+-[digit]+</code> for each.</p></li>
-<li><p>Submit all jobs:</p>
-
+<p>The script finds all directories in <code>./</code> that match <code>[digit]+-[digit]+</code> and creates a bash-script <code>./jobs/align-[digit]+-[digit]+</code> for each.</p>
+</li>
+<li>
+<p>Submit all jobs:</p>
 <pre><code>./submit-jobs
 </code></pre>
-
+<p>Check for projects with errors<br />
+</p>
+<pre><code>./ranges-to-redo -h
+</code></pre>
+<p>the <code>-h</code> suffix indicates that the output will be printed in a human-readable format.  The script will output any ranges that failed for <code>non-trivial</code> reasons.  After addressing any potential problems, resubmit the remaining jobs with</p>
+<pre><code>./submit-jobs-if-error
+</code></pre>
 <p>The script</p>
-
 <pre><code>./clean-trakem2-projects ls-sorted.txt 100
 </code></pre>
-
 <p>removes the generated TrakEM2 projects and supporting files.  Use it to keep the <code>import.txt</code> files but otherwise start from scratch.</p>
-
 <p>The script</p>
-
 <pre><code>./clean-trakem2-mipmaps ls-sorted.txt 100
 </code></pre>
-
-<p>removes the generated TrakEM2 supporting files but keeps the <code>import.txt</code> and project files.  Use this to save disk space as the supporting files can be regenerated later from the project files.</p></li>
+<p>removes the generated TrakEM2 supporting files but keeps the <code>import.txt</code> and project files.  Use this to save disk space as the supporting files can be regenerated later from the project files.</p>
+</li>
 </ol>
-
 <h2>Test Success</h2>
-
 <p>The Janelia cluster has occasional file I/O hickups and previous opening and saving operations may have failed unnoticed.  In addition, a very low number of images seem to have malformed TIFF-tags that prevents them from being imported into TrakEM2 properly.  We therefore have to test all generated TrakEM2 projects, fix the identified issues and re-execute the corresponding alignment jobs.</p>
-
 <p>The script
         ./create-test-projects-job ls-sorted.txt 100</p>
-
 <p>generates a test job that checks the existence of all images in all TrakEM2 projects in all directories in <code>./</code> that match <code>[digit]+-[digit]+</code>.  Submit the job with</p>
-
 <pre><code>    ./submit-test-projects-job
 </code></pre>
-
 <p>and, after the job has finished, grep the output for missing images (there should be two projects affected by each bad image), e.g.</p>
-
 <pre><code>    cd jobs/log
     grep missing test-projects.o7027208
       29673.0 missing
@@ -96,101 +94,67 @@
       33993.0 missing
     cd ../..
 </code></pre>
-
 <p>Open the <code>import.txt</code> files in the corresponding directories and identify the offending image files.  If the files exist and are not broken, try to open and re-save them with ImageJ.  Re-execute the align jobs for the compromised ranges:</p>
-
 <h2>Rigidly Align Series of Chunks<a name="rigid"></a></h2>
-
 <p>We recommend <a href="#backup">creating backup copies</a> of the <code>project.xml</code> files before running rigid alignment.</p>
-
 <p>As series chunks overlap by 50%, each image is present in two independent chunks (except the first and last half chunks).  While we expect 'elastic' deformation to be averaged away, the relative orientation of two chunks is completely arbitrary.  Therefore, we align the series of chunks with a rigid transformation.  To that end, corresponding locations are sampled in the overlapping parts of two chunks, and then, for all chunks, a rigid transformation is estimated such that the sum of all square displacements is minimized.  The rigid transformations can be estimated pairwise and are accumulated later.</p>
-
 <p>Create pairwise alignment jobs:</p>
-
-<pre><code>            ./create-align-overlapping-projects-pair-jobs ls-sorted.txt 100
+<pre><code>    ./create-align-overlapping-projects-pair-jobs ls-sorted.txt 100
 </code></pre>
-
 <p>Submit them:</p>
-
 <pre><code>    ./submit-align-overlapping-projects-pair-jobs ls-sorted.txt 100
 </code></pre>
-
 <p>On our cluster, a low number of projects will not open correctly, triggering a Sax XML-Parser exception.  Reasons may be manyfold and today beyond my access.  Therefore, resubmit all jobs that haven't delivered a result:</p>
-
 <pre><code>    ./submit-align-overlapping-projects-pair-jobs-if-not-exists ls-sorted.txt 100
 </code></pre>
-
 <p>Then, create the job to accumulate the transformations and update the joint bounding box for all ranges:</p>
-
-<pre><code>            ./create-apply-aligned-overlapping-projects-job ls-sorted.txt 100
+<pre><code>    ./create-apply-aligned-overlapping-projects-job ls-sorted.txt 100
 </code></pre>
-
 <p>Submit them (a):</p>
-
 <pre><code>    ./submit-apply-aligned-overlapping-projects-job
 </code></pre>
-
 <p>After the job has finished, you can check the sanity of the resulting project files by calling (b):</p>
-
 <pre><code>    ./sanity-check
             echo $?
 </code></pre>
-
 <p>If your files are sane, the first line will not produce any output and the second line prints 0. Otherwise, you will see the folders containing corrupt files (first line) and a printed 1 (second line) on stdout. In the latter case, go back to (a) and repeat until there are no corrupt files.</p>
-
 <h2>Export Interpolated Chunks</h2>
-
 <p>We are now ready to export the entire series by interpolating the estimated transformations across chunks.</p>
-
 <ol>
-<li><p>Create export jobs</p>
-
+<li>
+<p>Create export jobs</p>
 <pre><code>./create-export-jobs ls-sorted.txt 100
-</code></pre></li>
-<li><p>Submit export jobs</p>
-
+</code></pre>
+</li>
+<li>
+<p>Submit export jobs</p>
 <pre><code>./submit-export-jobs ls-sorted.txt 100
-</code></pre></li>
-<li><p>Visually inspect results from a scaled and cropped export</p>
-
+</code></pre>
+</li>
+<li>
+<p>Visually inspect results from a scaled and cropped export</p>
 <pre><code>./scale-and-crop-export
 </code></pre>
-
-<p>after you have modified the crop region in the second convert command.  Note that this script will generate and submit a large number of jobs (one per image) in short time which may cause trouble with the cluster setup.</p></li>
+<p>after you have modified the crop region in the second convert command.  Note that this script will generate and submit a large number of jobs (one per image) in short time which may cause trouble with the cluster setup.</p>
+</li>
 </ol>
-
 <h2>Other Stuff</h2>
-
 <h3>Backing up projects<a name="backup"></a></h3>
-
 <p>The script</p>
-
 <pre><code>    ./backup-projects
 </code></pre>
-
 <p>creates a backup copy of all <code>project.xml</code> files in all directories in <code>./</code> that match <code>[digit]+-[digit]+</code>.</p>
-
 <p>Conversely, the script</p>
-
 <pre><code>    ./restore-projects
 </code></pre>
-
 <p>copies the backup copy over the <code>project.xml</code> file in all directories in <code>./</code> that match <code>[digit]+-[digit]+</code>.  Use these scripts to test destructive parts of the pipeline.</p>
-
 <h3>Re-running specific chunks</h3>
-
 <p>Occasionally, a set of parameters will give rise to undesired behavior.  Re-running the elastic alignment for only the ranges with such behavior is desirable both to save unnecessary computation and headaches.  First, it is good practice to save a copy of <code>import-and-align.bsh</code> as a record of the parameters used to align the chunks that you will not be adjusting further.</p>
-
 <p>Next, to help select parameters for the troublesome chunks, use the <a href="http://fiji.sc/Elastic_Alignment_and_Montage">"Extract Block Matching Correspondences"</a> plugin in Fiji.  Once the parameters are selected, copy them into <code>import-and-align.bsh</code>, and then run the <code>align-&lt;range&gt;</code> scripts for the relevant chunks.  Visually inspect the results of these newly aligned chunks.</p>
-
 <p>Next, reset the bounding boxes of the TrakEM2 projects using the script</p>
-
 <pre><code>    ./create-run-resetBox-jobs
 </code></pre>
-
 <p>This step is necessary to ensure that the rigid alignment step to follow runs correctly.</p>
-
-<p>Finally, re-run the <a href="#rigid">rigid alignment</a> as described above.</p>
-</body>
+<p>Finally, re-run the <a href="#rigid">rigid alignment</a> as described above.</p></body>
 </html>
 
