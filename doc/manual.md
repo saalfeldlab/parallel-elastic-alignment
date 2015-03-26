@@ -110,7 +110,7 @@ As series chunks overlap by 50%, each image is present in two independent chunks
 
 Create pairwise alignment jobs:
 
-                ./create-align-overlapping-projects-pair-jobs ls-sorted.txt 100
+        ./create-align-overlapping-projects-pair-jobs ls-sorted.txt 100
 
 Submit them:
 
@@ -122,7 +122,7 @@ On our cluster, a low number of projects will not open correctly, triggering a S
 
 Then, create the job to accumulate the transformations and update the joint bounding box for all ranges:
 
-                ./create-apply-aligned-overlapping-projects-job ls-sorted.txt 100
+        ./create-apply-aligned-overlapping-projects-job ls-sorted.txt 100
 
 Submit them (a):
 
