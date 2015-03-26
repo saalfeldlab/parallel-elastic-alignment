@@ -4,11 +4,13 @@ Elastic alignment of long FIB-SEM series.
 
 We split elastic alignment of the entire series into parallel alignment jobs for chunks with fix size (e.g. 100) that are overlapping by 50% (e.g. 0-99, 50-149, 100-199, ...).  The independently aligned chunks are then aligned to each other with a rigid transformation that is calculated from a sample of corresponding locations across the overlapping ranges.  Finally, sections are exported with a transformation that is the linear interpolant of both independently estimated transformations in the overlapping range, weights run from 0-1 across the range.
 
+## Preliminaries 
+
+Make sure fiji is installed with an executable at:
+
+        ~/packages/Fiji.app/fiji-linux6 4
+
 ## Preparation
-
-0.  Make sure fiji is installed with an executable at:
-
-        ~/packages/Fiji.app/fiji-linux64
 
 1.	Create a list of all files to be imported with their absolute paths:
 
@@ -58,7 +60,7 @@ Alignment requires that Fiji is installed in `${HOME}/packages/Fiji.app/`.  Plea
 		
 		./ranges-to-redo -h  
 
-    the `-h` suffix indicates that the output will be printed in a human-readable format.  The script will output any rangest that failed for `non-trivial` reasons.  After addressing any potential problems, resubmit the remaining jobs with
+    the `-h` suffix indicates that the output will be printed in a human-readable format.  The script will output any ranges that failed for `non-trivial` reasons.  After addressing any potential problems, resubmit the remaining jobs with
 
 		./submit-jobs-if-error
 
